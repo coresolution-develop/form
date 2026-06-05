@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.sosyge.formflow.mapper.EmailTokenMapper">
+
+    <insert id="insert" parameterType="net.sosyge.formflow.domain.EmailToken"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO email_tokens (user_id, purpose, token_hash, expired_at)
+        VALUES (#{userId}, #{purpose}, #{tokenHash}, #{expiredAt})
+    </insert>
+
+    <select id="findByTokenHashAndPurpose" resultType="net.sosyge.formflow.domain.EmailToken">
+        SELECT id, user_id, purpose, token_hash, expired_at, used_at, created_at
+        FROM email_tokens
+        WHERE token_hash = #{tokenHash} AND purpose = #{purpose}
+    </select>
+
+    <update id="markUsed">
+        UPDATE email_tokens SET used_at = #{usedAt}
+        WHERE id = #{id} AND used_at IS NULL
+    </update>
+
+    <delete id="deleteOldUsed">
+        DELETE FROM email_tokens
+        WHERE used_at IS NOT NULL AND used_at &lt; #{before}
+    </delete>
+
+    <delete id="deleteExpiredOrUsed">
+        DELETE FROM email_tokens
+        WHERE expired_at &lt; #{now}
+           OR (used_at IS NOT NULL AND used_at &lt; #{usedBefore})
+    </delete>
+
+</mapper>

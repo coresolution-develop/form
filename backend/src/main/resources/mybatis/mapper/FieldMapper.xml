@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.sosyge.formflow.mapper.FieldMapper">
+
+    <resultMap id="FormFieldMap" type="net.sosyge.formflow.domain.FormField">
+        <id property="id" column="id"/>
+        <result property="formId" column="form_id"/>
+        <result property="type" column="type"/>
+        <result property="label" column="label"/>
+        <result property="placeholder" column="placeholder"/>
+        <result property="required" column="required"/>
+        <result property="orderNum" column="order_num"/>
+        <result property="options" column="options"
+                typeHandler="net.sosyge.formflow.mybatis.handler.JsonListTypeHandler"/>
+        <result property="validation" column="validation"
+                typeHandler="net.sosyge.formflow.mybatis.handler.JsonMapTypeHandler"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="net.sosyge.formflow.domain.FormField"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO form_fields (form_id, type, label, placeholder, required, order_num, options, validation)
+        VALUES (
+            #{formId}, #{type}, #{label}, #{placeholder}, #{required}, #{orderNum},
+            #{options, typeHandler=net.sosyge.formflow.mybatis.handler.JsonListTypeHandler},
+            #{validation, typeHandler=net.sosyge.formflow.mybatis.handler.JsonMapTypeHandler}
+        )
+    </insert>
+
+    <select id="findByFormIdOrderByOrderNum" resultMap="FormFieldMap">
+        SELECT id, form_id, type, label, placeholder, required, order_num, options, validation, created_at, updated_at
+        FROM form_fields
+        WHERE form_id = #{formId}
+        ORDER BY order_num
+    </select>
+
+    <select id="findByIdAndFormId" resultMap="FormFieldMap">
+        SELECT id, form_id, type, label, placeholder, required, order_num, options, validation, created_at, updated_at
+        FROM form_fields
+        WHERE id = #{id} AND form_id = #{formId}
+    </select>
+
+    <update id="updateField" parameterType="net.sosyge.formflow.domain.FormField">
+        UPDATE form_fields
+        SET label = #{label},
+            placeholder = #{placeholder},
+            required = #{required},
+            options = #{options, typeHandler=net.sosyge.formflow.mybatis.handler.JsonListTypeHandler},
+            validation = #{validation, typeHandler=net.sosyge.formflow.mybatis.handler.JsonMapTypeHandler}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateOrder">
+        UPDATE form_fields SET order_num = #{orderNum} WHERE id = #{id}
+    </update>
+
+    <delete id="deleteByIdAndFormId">
+        DELETE FROM form_fields WHERE id = #{id} AND form_id = #{formId}
+    </delete>
+
+    <select id="countByFormId" resultType="long">
+        SELECT COUNT(*) FROM form_fields WHERE form_id = #{formId}
+    </select>
+
+    <select id="maxOrderNum" resultType="java.lang.Integer">
+        SELECT MAX(order_num) FROM form_fields WHERE form_id = #{formId}
+    </select>
+
+    <update id="shiftOrderAfterDelete">
+        UPDATE form_fields
+        SET order_num = order_num - 1
+        WHERE form_id = #{formId} AND order_num &gt; #{deletedOrder}
+    </update>
+
+</mapper>

@@ -1,0 +1,21 @@
+formflow:
+  cookie:
+    secure: false
+    same-site: Lax
+  mail:
+    provider: smtp
+  rate-limit:
+    enabled: false   # 로컬 비활성
+  recaptcha:
+    enabled: ${RECAPTCHA_ENABLED:false}   # 로컬은 검증 우회
+
+spring:
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:1025}   # mailhog
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false

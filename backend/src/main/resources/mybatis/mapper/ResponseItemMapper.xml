@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.sosyge.formflow.mapper.ResponseItemMapper">
+
+    <insert id="insertBatch">
+        INSERT INTO response_items (response_id, field_id, value)
+        VALUES
+        <foreach collection="items" item="it" separator=",">
+            (#{it.responseId}, #{it.fieldId}, #{it.value})
+        </foreach>
+    </insert>
+
+    <select id="findByResponseIds" resultType="net.sosyge.formflow.domain.ResponseItem">
+        SELECT id, response_id, field_id, value
+        FROM response_items
+        WHERE response_id IN
+        <foreach collection="ids" item="rid" open="(" separator="," close=")">
+            #{rid}
+        </foreach>
+    </select>
+
+    <select id="findByFormId" resultType="net.sosyge.formflow.domain.ResponseItem">
+        SELECT ri.id, ri.response_id, ri.field_id, ri.value
+        FROM response_items ri
+        JOIN responses r ON r.id = ri.response_id
+        WHERE r.form_id = #{formId}
+        ORDER BY r.submitted_at DESC, ri.id
+    </select>
+
+</mapper>

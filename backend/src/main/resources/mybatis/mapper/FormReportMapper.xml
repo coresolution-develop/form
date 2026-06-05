@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.sosyge.formflow.mapper.FormReportMapper">
+
+    <insert id="insert" parameterType="net.sosyge.formflow.domain.FormReport"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO form_reports (form_id, reporter_ip, reporter_user_id, reason, detail, status)
+        VALUES (#{formId}, #{reporterIp}, #{reporterUserId}, #{reason}, #{detail}, #{status})
+    </insert>
+
+    <!-- ===== 관리자 (§7.10 / §10.2) ===== -->
+
+    <select id="findPage" resultType="net.sosyge.formflow.dto.response.admin.AdminReportItem">
+        SELECT r.id            AS id,
+               r.form_id       AS form_id,
+               f.title         AS form_title,
+               f.slug          AS form_slug,
+               r.reason        AS reason,
+               r.detail        AS detail,
+               r.status        AS status,
+               r.reporter_user_id AS reporter_user_id,
+               r.handled_by    AS handled_by,
+               r.handled_at    AS handled_at,
+               (SELECT COUNT(*) FROM form_reports fr
+                 WHERE fr.form_id = r.form_id AND fr.status = 'PENDING') AS pending_count_for_form,
+               r.created_at    AS created_at
+        FROM form_reports r
+        JOIN forms f ON f.id = r.form_id
+        <where>
+            <if test="status != null">r.status = #{status}</if>
+        </where>
+        ORDER BY r.created_at DESC, r.id DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM form_reports r
+        <where>
+            <if test="status != null">r.status = #{status}</if>
+        </where>
+    </select>
+
+    <select id="findById" resultType="net.sosyge.formflow.domain.FormReport">
+        SELECT id, form_id, reporter_ip, reporter_user_id, reason, detail, status,
+               handled_by, handled_at, created_at
+        FROM form_reports
+        WHERE id = #{id}
+    </select>
+
+    <update id="updateStatus">
+        UPDATE form_reports
+        SET status = #{status}, handled_by = #{handledBy}, handled_at = #{handledAt}
+        WHERE id = #{id}
+    </update>
+
+    <select id="countPendingByFormId" resultType="long">
+        SELECT COUNT(*) FROM form_reports WHERE form_id = #{formId} AND status = 'PENDING'
+    </select>
+
+    <select id="countByStatus" resultType="long">
+        SELECT COUNT(*) FROM form_reports WHERE status = #{status}
+    </select>
+
+</mapper>

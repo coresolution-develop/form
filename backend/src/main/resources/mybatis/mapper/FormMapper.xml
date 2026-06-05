@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.sosyge.formflow.mapper.FormMapper">
+
+    <insert id="insert" parameterType="net.sosyge.formflow.domain.Form"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO forms (user_id, slug, title, description, status, response_limit)
+        VALUES (#{userId}, #{slug}, #{title}, #{description}, #{status}, #{responseLimit})
+    </insert>
+
+    <select id="findByIdActive" resultType="net.sosyge.formflow.domain.Form">
+        SELECT id, user_id, slug, title, description, status, response_limit,
+               closed_at, deleted_at, created_at, updated_at
+        FROM forms
+        WHERE id = #{id} AND deleted_at IS NULL
+    </select>
+
+    <select id="findActiveBySlug" resultType="net.sosyge.formflow.domain.Form">
+        SELECT id, user_id, slug, title, description, status, response_limit,
+               closed_at, deleted_at, created_at, updated_at
+        FROM forms
+        WHERE slug = #{slug} AND status = 'PUBLISHED' AND deleted_at IS NULL
+    </select>
+
+    <select id="existsBySlug" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM forms WHERE slug = #{slug})
+    </select>
+
+    <select id="findPageByUserId"
+            resultType="net.sosyge.formflow.dto.response.form.FormSummaryResponse">
+        SELECT f.id          AS id,
+               f.slug        AS slug,
+               f.title       AS title,
+               f.status      AS status,
+               f.response_limit AS response_limit,
+               f.created_at  AS created_at,
+               COUNT(r.id)   AS response_count
+        FROM forms f
+        LEFT JOIN responses r ON r.form_id = f.id
+        WHERE f.user_id = #{userId} AND f.deleted_at IS NULL
+        GROUP BY f.id, f.slug, f.title, f.status, f.response_limit, f.created_at
+        ORDER BY f.created_at DESC, f.id DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countByUserId" resultType="long">
+        SELECT COUNT(*) FROM forms WHERE user_id = #{userId} AND deleted_at IS NULL
+    </select>
+
+    <select id="countActiveByUserId" resultType="long">
+        SELECT COUNT(*) FROM forms WHERE user_id = #{userId} AND deleted_at IS NULL
+    </select>
+
+    <update id="updateMeta">
+        UPDATE forms
+        SET title = #{title}, description = #{description}, response_limit = #{responseLimit}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE forms SET status = #{status}, closed_at = #{closedAt} WHERE id = #{id}
+    </update>
+
+    <update id="softDelete">
+        UPDATE forms SET deleted_at = #{deletedAt} WHERE id = #{id}
+    </update>
+
+    <update id="softDeleteByUserId">
+        UPDATE forms SET deleted_at = #{deletedAt}
+        WHERE user_id = #{userId} AND deleted_at IS NULL
+    </update>
+
+    <!-- ===== 관리자 (§7.10) ===== -->
+    <!-- 카운트는 스칼라 서브쿼리로 JOIN fan-out 방지 -->
+    <select id="findPageForAdmin" resultType="net.sosyge.formflow.dto.response.admin.AdminFormItem">
+        SELECT f.id        AS id,
+               f.slug      AS slug,
+               f.title     AS title,
+               f.status    AS status,
+               u.id        AS owner_id,
+               u.email     AS owner_email,
+               (SELECT COUNT(*) FROM responses r WHERE r.form_id = f.id)                          AS response_count,
+               (SELECT COUNT(*) FROM form_reports fr WHERE fr.form_id = f.id AND fr.status = 'PENDING') AS pending_report_count,
+               f.created_at AS created_at
+        FROM forms f
+        JOIN users u ON u.id = f.user_id
+        WHERE f.deleted_at IS NULL
+        <if test="keyword != null and keyword != ''">
+            AND (f.slug LIKE CONCAT('%', #{keyword}, '%')
+                 OR f.title LIKE CONCAT('%', #{keyword}, '%')
+                 OR u.email LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY f.created_at DESC, f.id DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countForAdmin" resultType="long">
+        SELECT COUNT(*)
+        FROM forms f
+        JOIN users u ON u.id = f.user_id
+        WHERE f.deleted_at IS NULL
+        <if test="keyword != null and keyword != ''">
+            AND (f.slug LIKE CONCAT('%', #{keyword}, '%')
+                 OR f.title LIKE CONCAT('%', #{keyword}, '%')
+                 OR u.email LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+    </select>
+
+</mapper>

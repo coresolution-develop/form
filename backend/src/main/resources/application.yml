@@ -1,0 +1,107 @@
+spring:
+  application:
+    name: formflow
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  jackson:
+    time-zone: Asia/Seoul
+    date-format: yyyy-MM-dd HH:mm:ss
+    serialization:
+      write-dates-as-timestamps: false
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 5000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 3000
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+server:
+  port: ${SERVER_PORT:8080}
+  forward-headers-strategy: native   # X-Forwarded-* 처리 (nginx 뒤)
+  error:
+    include-stacktrace: never
+    include-message: never
+  compression:
+    enabled: true
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+    default-fetch-size: 100
+    default-statement-timeout: 30
+    cache-enabled: false
+  type-aliases-package: net.sosyge.formflow.domain
+  mapper-locations: classpath:mybatis/mapper/*.xml
+
+formflow:
+  app:
+    front-url: ${FRONT_URL}
+    api-url: ${API_URL}
+  jwt:
+    secret: ${JWT_SECRET}
+    access-expiry-seconds: 1800
+    refresh-expiry-seconds: 604800
+  cookie:
+    domain: ${COOKIE_DOMAIN:}
+    secure: ${COOKIE_SECURE:true}
+    same-site: ${COOKIE_SAMESITE:Strict}
+  cors:
+    allowed-origins: ${CORS_ORIGINS}   # 쉼표 구분
+  mail:
+    provider: ${MAIL_PROVIDER:ncp}     # ncp | smtp
+    from: ${MAIL_FROM:no-reply@form.sosyge.net}
+    from-name: FormFlow
+    ncp:
+      access-key: ${NCP_ACCESS_KEY:}
+      secret-key: ${NCP_SECRET_KEY:}
+  recaptcha:
+    enabled: ${RECAPTCHA_ENABLED:true}
+    secret: ${RECAPTCHA_SECRET:}
+    threshold: 0.5
+    submit-threshold: 0.3
+  limits:
+    forms-per-user: 10
+    fields-per-form: 30
+    responses-per-form: 100
+    response-retention-days: 365
+  admin:
+    allowed-ips: ${ADMIN_ALLOWED_IPS:}
+
+logging:
+  level:
+    root: INFO
+    net.sosyge.formflow: DEBUG
+    org.springframework.security: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:-}] %logger{36} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+
+sentry:
+  dsn: ${SENTRY_DSN_BACKEND:}
+  environment: ${SPRING_PROFILES_ACTIVE:local}
+  send-default-pii: false
+  traces-sample-rate: 0.1

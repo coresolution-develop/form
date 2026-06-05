@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.sosyge.formflow.mapper.ResponseMapper">
+
+    <insert id="insert" parameterType="net.sosyge.formflow.domain.Response"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO responses (form_id, respondent_key, ip, user_agent)
+        VALUES (#{formId}, #{respondentKey}, #{ip}, #{userAgent})
+    </insert>
+
+    <select id="countByFormId" resultType="long">
+        SELECT COUNT(*) FROM responses WHERE form_id = #{formId}
+    </select>
+
+    <select id="existsByFormIdAndRespondentKey" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM responses WHERE form_id = #{formId} AND respondent_key = #{respondentKey}
+        )
+    </select>
+
+    <select id="findPageByFormId" resultType="net.sosyge.formflow.domain.Response">
+        SELECT id, form_id, respondent_key, ip, user_agent, submitted_at
+        FROM responses
+        WHERE form_id = #{formId}
+        ORDER BY submitted_at DESC, id DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="findAllByFormId" resultType="net.sosyge.formflow.domain.Response">
+        SELECT id, form_id, respondent_key, ip, user_agent, submitted_at
+        FROM responses
+        WHERE form_id = #{formId}
+        ORDER BY submitted_at DESC, id DESC
+    </select>
+
+    <!-- ===== 대시보드 (§10.3) ===== -->
+
+    <select id="countSubmittedBetween" resultType="long">
+        SELECT COUNT(*) FROM responses WHERE submitted_at &gt;= #{start} AND submitted_at &lt; #{end}
+    </select>
+
+    <select id="dailyResponsesSince" resultType="net.sosyge.formflow.dto.response.admin.DailyCount">
+        SELECT DATE_FORMAT(submitted_at, '%Y-%m-%d') AS day, COUNT(*) AS count
+        FROM responses
+        WHERE submitted_at &gt;= #{since}
+        GROUP BY day
+        ORDER BY day
+    </select>
+
+    <!-- ===== 배치 (§10.6) ===== -->
+
+    <update id="anonymizeOlderThan">
+        UPDATE responses
+        SET ip = NULL, user_agent = NULL
+        WHERE submitted_at &lt; #{before}
+          AND (ip IS NOT NULL OR user_agent IS NOT NULL)
+    </update>
+
+</mapper>

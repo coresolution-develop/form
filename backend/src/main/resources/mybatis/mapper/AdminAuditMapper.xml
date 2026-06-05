@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.sosyge.formflow.mapper.AdminAuditMapper">
+
+    <insert id="insert" parameterType="net.sosyge.formflow.domain.AdminAudit"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO admin_audits (admin_id, action, target_type, target_id, detail, ip)
+        VALUES (#{adminId}, #{action}, #{targetType}, #{targetId},
+                #{detail, typeHandler=net.sosyge.formflow.mybatis.handler.JsonMapTypeHandler},
+                #{ip})
+    </insert>
+
+    <resultMap id="AuditItemMap" type="net.sosyge.formflow.dto.response.admin.AdminAuditItem">
+        <constructor>
+            <idArg column="id" javaType="java.lang.Long"/>
+            <arg column="admin_id" javaType="java.lang.Long"/>
+            <arg column="admin_email" javaType="java.lang.String"/>
+            <arg column="action" javaType="java.lang.String"/>
+            <arg column="target_type" javaType="java.lang.String"/>
+            <arg column="target_id" javaType="java.lang.Long"/>
+            <arg column="detail" javaType="java.util.Map"
+                 typeHandler="net.sosyge.formflow.mybatis.handler.JsonMapTypeHandler"/>
+            <arg column="ip" javaType="java.lang.String"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="auditSelect">
+        SELECT a.id          AS id,
+               a.admin_id    AS admin_id,
+               u.email       AS admin_email,
+               a.action      AS action,
+               a.target_type AS target_type,
+               a.target_id   AS target_id,
+               a.detail      AS detail,
+               a.ip          AS ip,
+               a.created_at  AS created_at
+        FROM admin_audits a
+        LEFT JOIN users u ON u.id = a.admin_id
+    </sql>
+
+    <select id="findPage" resultMap="AuditItemMap">
+        <include refid="auditSelect"/>
+        <where>
+            <if test="targetType != null">a.target_type = #{targetType}</if>
+        </where>
+        ORDER BY a.created_at DESC, a.id DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM admin_audits a
+        <where>
+            <if test="targetType != null">a.target_type = #{targetType}</if>
+        </where>
+    </select>
+
+    <select id="findRecent" resultMap="AuditItemMap">
+        <include refid="auditSelect"/>
+        ORDER BY a.created_at DESC, a.id DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>
