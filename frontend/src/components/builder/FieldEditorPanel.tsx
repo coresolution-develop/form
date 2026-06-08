@@ -128,13 +128,15 @@ export function FieldEditorPanel({ formId, field }: Props) {
           <span className="text-sm font-medium text-gray-800">선택지</span>
           {options.map((opt, i) => (
             <div key={i} className="flex items-center gap-2">
-              <Input
-                className="flex-1"
-                value={opt}
-                placeholder={`선택지 ${i + 1}`}
-                onChange={(e) => updateOption(i, e.target.value)}
-                onBlur={() => save()}
-              />
+              <div className="flex-1">
+                <Input
+                  className="w-full"
+                  value={opt}
+                  placeholder={`선택지 ${i + 1}`}
+                  onChange={(e) => updateOption(i, e.target.value)}
+                  onBlur={() => save()}
+                />
+              </div>
               <Button variant="ghost" size="sm" onClick={() => removeOption(i)} aria-label="선택지 삭제">
                 ✕
               </Button>

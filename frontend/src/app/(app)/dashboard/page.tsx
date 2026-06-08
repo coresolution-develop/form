@@ -68,7 +68,7 @@ export default function DashboardPage() {
       )}
 
       {isLoading ? (
-        <div className="flex justify-center py-20 text-blue-600">
+        <div className="flex justify-center py-20 text-brand">
           <Spinner className="h-8 w-8" />
         </div>
       ) : !data || data.items.length === 0 ? (
@@ -80,7 +80,7 @@ export default function DashboardPage() {
         <>
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {data.items.map((form) => (
-              <li key={form.id} className="flex flex-col rounded-xl border border-gray-200 bg-white p-4">
+              <li key={form.id} className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 transition-shadow hover:shadow-sm">
                 <div className="mb-2 flex items-center justify-between">
                   <StatusBadge status={form.status} />
                   <span className="text-xs text-gray-400">{form.createdAt?.slice(0, 10)}</span>

@@ -42,7 +42,7 @@ export function AddFieldMenu({ formId, onCreated }: Props) {
         <select
           value={type}
           onChange={(e) => setType(e.target.value as FieldType)}
-          className="h-10 rounded-lg border border-gray-300 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="h-10 rounded-lg border border-gray-300 px-2 text-sm focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
         >
           {TYPES.map((t) => (
             <option key={t} value={t}>

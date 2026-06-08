@@ -19,7 +19,7 @@ export function Sidebar() {
               href={item.href}
               className={cn(
                 'rounded-md px-3 py-2 text-sm',
-                active ? 'bg-blue-50 font-medium text-blue-700' : 'text-gray-700 hover:bg-gray-100',
+                active ? 'bg-brand-light font-medium text-brand-dark' : 'text-gray-700 hover:bg-gray-100',
               )}
             >
               {item.label}

@@ -1,7 +1,6 @@
 'use client';
 
-import { Input } from '@/components/ui/Input';
-import { Textarea } from '@/components/ui/Textarea';
+import { cn } from '@/lib/cn';
 import type { FormField } from '@/types/field';
 
 /**
@@ -20,33 +19,43 @@ export interface FieldRendererProps {
   error?: string;
 }
 
+const inputBase =
+  'w-full h-[42px] px-3 text-sm border rounded-lg outline-none transition-colors ' +
+  'focus:border-brand focus:ring-2 focus:ring-brand/20 ' +
+  'disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed';
+
 export function FieldRenderer({ field, value, onChange, disabled, error }: FieldRendererProps) {
-  const label = (
-    <span className="text-sm font-medium text-gray-800">
-      {field.label}
-      {field.required && <span className="ml-0.5 text-red-500">*</span>}
-    </span>
-  );
   const strValue = typeof value === 'string' ? value : '';
   const arrValue = Array.isArray(value) ? value : [];
+  const borderClass = error ? 'border-red-400' : 'border-gray-300';
+
+  const optionBox = (selected: boolean) =>
+    cn(
+      'flex items-center gap-2.5 px-3 py-2.5 border rounded-lg text-sm',
+      selected
+        ? 'border-[1.5px] border-brand bg-brand-light text-brand-dark'
+        : 'border-gray-300 text-gray-700',
+      disabled ? 'cursor-default' : 'cursor-pointer',
+    );
 
   const renderControl = () => {
     switch (field.type) {
       case 'LONG':
         return (
-          <Textarea
+          <textarea
+            rows={3}
             placeholder={field.placeholder ?? ''}
             value={strValue}
             disabled={disabled}
-            error={error}
             onChange={(e) => onChange?.(e.target.value)}
+            className={cn(inputBase, 'h-auto py-2.5 resize-none', borderClass)}
           />
         );
       case 'SINGLE':
         return (
           <div className="flex flex-col gap-2" role="radiogroup" aria-label={field.label}>
             {(field.options ?? []).map((opt, i) => (
-              <label key={i} className="flex items-center gap-2 text-sm text-gray-700">
+              <label key={i} className={optionBox(strValue === opt)}>
                 <input
                   type="radio"
                   name={`field-${field.id}`}
@@ -54,7 +63,7 @@ export function FieldRenderer({ field, value, onChange, disabled, error }: Field
                   checked={strValue === opt}
                   disabled={disabled}
                   onChange={(e) => onChange?.(e.target.value)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                  className="h-4 w-4 accent-brand"
                 />
                 {opt}
               </label>
@@ -65,7 +74,7 @@ export function FieldRenderer({ field, value, onChange, disabled, error }: Field
         return (
           <div className="flex flex-col gap-2">
             {(field.options ?? []).map((opt, i) => (
-              <label key={i} className="flex items-center gap-2 text-sm text-gray-700">
+              <label key={i} className={optionBox(arrValue.includes(opt))}>
                 <input
                   type="checkbox"
                   value={opt}
@@ -77,7 +86,7 @@ export function FieldRenderer({ field, value, onChange, disabled, error }: Field
                       : arrValue.filter((v) => v !== opt);
                     onChange?.(next);
                   }}
-                  className="h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
+                  className="h-4 w-4 rounded accent-brand"
                 />
                 {opt}
               </label>
@@ -88,15 +97,17 @@ export function FieldRenderer({ field, value, onChange, disabled, error }: Field
         const inputType =
           field.type === 'EMAIL' ? 'email' : field.type === 'NUMBER' ? 'number' : field.type === 'DATE' ? 'date' : 'text';
         return (
-          <Input
+          <input
             type={inputType}
             placeholder={field.placeholder ?? ''}
             value={strValue}
             disabled={disabled}
-            error={error}
             min={field.validation?.min}
             max={field.validation?.max}
             onChange={(e) => onChange?.(e.target.value)}
+            // NUMBER: 포커스 상태에서 휠로 값이 증감되는 브라우저 기본 동작 차단 (포커스 해제)
+            onWheel={field.type === 'NUMBER' ? (e) => e.currentTarget.blur() : undefined}
+            className={cn(inputBase, borderClass)}
           />
         );
       }
@@ -104,12 +115,13 @@ export function FieldRenderer({ field, value, onChange, disabled, error }: Field
   };
 
   return (
-    <div className="flex flex-col gap-1.5">
-      {label}
+    <div className="flex flex-col">
+      <label className="mb-1.5 block text-sm font-medium text-gray-800">
+        {field.label}
+        {field.required && <span className="ml-0.5 text-red-500">*</span>}
+      </label>
       {renderControl()}
-      {error && field.type !== 'LONG' && !['SHORT', 'EMAIL', 'NUMBER', 'DATE'].includes(field.type) && (
-        <p className="text-xs text-red-600">{error}</p>
-      )}
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );
 }

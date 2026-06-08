@@ -30,7 +30,7 @@ export function FieldItem({ field, selected, onSelect, onDelete }: Props) {
       onClick={() => onSelect(field.id)}
       className={cn(
         'flex items-center gap-2 rounded-lg border px-3 py-3',
-        selected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50',
+        selected ? 'border-brand bg-brand-light' : 'border-gray-200 bg-white hover:bg-gray-50',
       )}
     >
       <button

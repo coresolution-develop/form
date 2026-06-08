@@ -70,7 +70,7 @@ export function BuilderHeader({ form, previewMode, onTogglePreview }: Props) {
           onChange={(e) => setTitle(e.target.value)}
           onBlur={saveTitle}
           aria-label="폼 제목"
-          className="rounded border border-transparent px-2 py-1 text-lg font-semibold text-gray-900 hover:border-gray-200 focus:border-blue-400 focus:outline-none"
+          className="rounded border border-transparent px-2 py-1 text-lg font-semibold text-gray-900 hover:border-gray-200 focus:border-brand focus:outline-none"
         />
         <StatusBadge status={form.status} />
       </div>

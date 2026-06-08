@@ -19,7 +19,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   if (status !== 'authed') {
     return (
-      <div className="flex min-h-screen items-center justify-center text-blue-600">
+      <div className="flex min-h-screen items-center justify-center text-brand">
         <Spinner className="h-8 w-8" />
       </div>
     );

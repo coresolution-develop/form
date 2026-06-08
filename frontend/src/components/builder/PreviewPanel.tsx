@@ -25,7 +25,7 @@ export function PreviewPanel({ title, description, fields }: Props) {
       <button
         type="button"
         disabled
-        className="mt-6 w-full cursor-not-allowed rounded-lg bg-blue-300 py-2.5 text-sm font-medium text-white"
+        className="mt-6 w-full cursor-not-allowed rounded-lg bg-brand/40 py-2.5 text-sm font-medium text-white"
       >
         제출 (미리보기)
       </button>

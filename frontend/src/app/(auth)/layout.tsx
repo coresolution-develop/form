@@ -7,8 +7,9 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       <Link href="/" className="mb-8 text-2xl font-bold text-gray-900">
         FormFlow
       </Link>
-      <div className="w-full max-w-sm rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
-        {children}
+      <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <div className="h-1.5 bg-brand" />
+        <div className="p-8">{children}</div>
       </div>
     </div>
   );
