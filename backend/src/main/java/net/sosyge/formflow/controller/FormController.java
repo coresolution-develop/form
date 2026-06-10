@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import net.sosyge.formflow.common.ApiResponse;
 import net.sosyge.formflow.common.CurrentUser;
 import net.sosyge.formflow.common.PageResponse;
+import net.sosyge.formflow.dto.request.form.FormClosesAtRequest;
 import net.sosyge.formflow.dto.request.form.FormCreateRequest;
 import net.sosyge.formflow.dto.request.form.FormStatusRequest;
 import net.sosyge.formflow.dto.request.form.FormUpdateRequest;
@@ -65,6 +66,14 @@ public class FormController {
                                           @PathVariable Long id,
                                           @Valid @RequestBody FormStatusRequest req) {
         formService.updateStatus(user.getId(), id, req);
+        return ApiResponse.ok();
+    }
+
+    @PatchMapping("/{id}/closes-at")
+    public ApiResponse<Void> updateClosesAt(@CurrentUser CustomUserDetails user,
+                                            @PathVariable Long id,
+                                            @Valid @RequestBody FormClosesAtRequest req) {
+        formService.updateClosesAt(user.getId(), id, req.closesAt());
         return ApiResponse.ok();
     }
 

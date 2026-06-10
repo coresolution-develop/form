@@ -5,6 +5,7 @@ import net.sosyge.formflow.config.LimitsProperties;
 import net.sosyge.formflow.domain.FieldType;
 import net.sosyge.formflow.domain.Form;
 import net.sosyge.formflow.domain.FormField;
+import net.sosyge.formflow.domain.FormStatus;
 import net.sosyge.formflow.dto.request.field.FieldCreateRequest;
 import net.sosyge.formflow.dto.request.field.FieldOrderRequest;
 import net.sosyge.formflow.dto.request.field.FieldUpdateRequest;
@@ -28,7 +29,7 @@ public class FieldService {
 
     @Transactional
     public FieldResponse create(Long userId, Long formId, FieldCreateRequest req) {
-        verifyOwnership(userId, formId);
+        verifyEditable(userId, formId);
 
         if (fieldMapper.countByFormId(formId) >= limits.getFieldsPerForm()) {
             throw new BusinessException(ErrorCode.PLAN_LIMIT_EXCEEDED,
@@ -56,7 +57,7 @@ public class FieldService {
 
     @Transactional
     public FieldResponse update(Long userId, Long formId, Long fieldId, FieldUpdateRequest req) {
-        verifyOwnership(userId, formId);
+        verifyEditable(userId, formId);
         FormField field = fieldMapper.findByIdAndFormId(fieldId, formId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
 
@@ -74,7 +75,7 @@ public class FieldService {
 
     @Transactional
     public void reorder(Long userId, Long formId, FieldOrderRequest req) {
-        verifyOwnership(userId, formId);
+        verifyEditable(userId, formId);
         java.util.Set<Long> valid = fieldMapper.findByFormIdOrderByOrderNum(formId).stream()
                 .map(FormField::getId)
                 .collect(java.util.stream.Collectors.toSet());
@@ -90,7 +91,7 @@ public class FieldService {
 
     @Transactional
     public void delete(Long userId, Long formId, Long fieldId) {
-        verifyOwnership(userId, formId);
+        verifyEditable(userId, formId);
         FormField field = fieldMapper.findByIdAndFormId(fieldId, formId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         fieldMapper.deleteByIdAndFormId(fieldId, formId);
@@ -99,12 +100,17 @@ public class FieldService {
 
     // ----------------------------------------------------------------
 
-    private void verifyOwnership(Long userId, Long formId) {
+    /** 소유권 + 편집가능 상태(DRAFT) 검증. 발행/마감 폼은 구조 편집 금지(#9). */
+    private Form verifyEditable(Long userId, Long formId) {
         Form form = formMapper.findByIdActive(formId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         if (!form.getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
+        if (form.getStatus() != FormStatus.DRAFT) {
+            throw new BusinessException(ErrorCode.FORM_NOT_EDITABLE);
+        }
+        return form;
     }
 
     private void requireOptionsForChoice(FieldType type, List<String> options) {

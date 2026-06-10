@@ -23,6 +23,7 @@ public class Form {
     private FormStatus status;
     private Integer responseLimit;
     private LocalDateTime closedAt;
+    private LocalDateTime closesAt;
     private LocalDateTime deletedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -1,6 +1,7 @@
 package net.sosyge.formflow.service;
 
 import lombok.RequiredArgsConstructor;
+import net.sosyge.formflow.domain.FieldType;
 import net.sosyge.formflow.domain.Form;
 import net.sosyge.formflow.domain.FormField;
 import net.sosyge.formflow.domain.FormReport;
@@ -70,14 +71,16 @@ public class PublicFormService {
             throw new BusinessException(ErrorCode.DUPLICATE_RESPONSE);
         }
 
-        Set<Long> validFieldIds = fields.stream().map(FormField::getId).collect(Collectors.toSet());
+        Map<Long, FormField> fieldById = fields.stream()
+                .collect(Collectors.toMap(FormField::getId, f -> f));
         List<ResponseItem> items = req.answers().stream()
-                .filter(a -> a.fieldId() != null && validFieldIds.contains(a.fieldId()))
+                .filter(a -> a.fieldId() != null && fieldById.containsKey(a.fieldId()))
                 .filter(a -> StringUtils.hasText(a.value()))
                 .map(a -> ResponseItem.builder()
                         .responseId(response.getId())
                         .fieldId(a.fieldId())
-                        .value(a.value())
+                        // #2 SHORT 고정 접미사: 입력값 + ' ' + suffix 로 합쳐 저장 (검증은 입력값 기준으로 이미 완료)
+                        .value(applySuffix(fieldById.get(a.fieldId()), a.value()))
                         .build())
                 .toList();
         if (!items.isEmpty()) {
@@ -99,6 +102,30 @@ public class PublicFormService {
     }
 
     // ----------------------------------------------------------------
+
+    /**
+     * #2 단답형 접미사 — fixed 모드: SHORT 필드의 validation.suffix 가 있으면 "입력값 + ' ' + suffix" 로 합친다.
+     * select 모드(suffixMode='select')는 프론트가 이미 합쳐 전송하므로 서버는 원본 그대로 저장.
+     * SHORT 외 타입이나 suffix 없음/빈값이면 원본 입력값 그대로.
+     */
+    private String applySuffix(FormField field, String value) {
+        if (field.getType() != FieldType.SHORT) {
+            return value;
+        }
+        Map<String, Object> validation = field.getValidation();
+        if (validation == null) {
+            return value;
+        }
+        // select 모드: 프론트가 입력값+선택값을 이미 합쳐 보냄 → 서버는 손대지 않음
+        if ("select".equals(validation.get("suffixMode"))) {
+            return value;
+        }
+        Object suffix = validation.get("suffix");
+        if (!(suffix instanceof String s) || s.isBlank()) {
+            return value;
+        }
+        return value + " " + s.trim();
+    }
 
     /** PUBLISHED + 미삭제 + 한도 미초과만 통과. 그 외(비공개/마감/삭제/한도초과)는 동일하게 404 (§6.10). */
     private Form loadAvailableForm(String slug) {

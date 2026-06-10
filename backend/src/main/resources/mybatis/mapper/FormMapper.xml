@@ -11,14 +11,14 @@
 
     <select id="findByIdActive" resultType="net.sosyge.formflow.domain.Form">
         SELECT id, user_id, slug, title, description, status, response_limit,
-               closed_at, deleted_at, created_at, updated_at
+               closed_at, closes_at, deleted_at, created_at, updated_at
         FROM forms
         WHERE id = #{id} AND deleted_at IS NULL
     </select>
 
     <select id="findActiveBySlug" resultType="net.sosyge.formflow.domain.Form">
         SELECT id, user_id, slug, title, description, status, response_limit,
-               closed_at, deleted_at, created_at, updated_at
+               closed_at, closes_at, deleted_at, created_at, updated_at
         FROM forms
         WHERE slug = #{slug} AND status = 'PUBLISHED' AND deleted_at IS NULL
     </select>
@@ -61,6 +61,18 @@
     <update id="updateStatus">
         UPDATE forms SET status = #{status}, closed_at = #{closedAt} WHERE id = #{id}
     </update>
+
+    <update id="updateClosesAt">
+        UPDATE forms SET closes_at = #{closesAt} WHERE id = #{id}
+    </update>
+
+    <select id="findExpiredPublished" resultType="long">
+        SELECT id FROM forms
+        WHERE status = 'PUBLISHED'
+          AND closes_at IS NOT NULL
+          AND closes_at &lt;= #{now}
+          AND deleted_at IS NULL
+    </select>
 
     <update id="softDelete">
         UPDATE forms SET deleted_at = #{deletedAt} WHERE id = #{id}

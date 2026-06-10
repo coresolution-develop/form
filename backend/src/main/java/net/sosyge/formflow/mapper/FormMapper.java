@@ -42,6 +42,12 @@ public interface FormMapper {
                       @Param("status") FormStatus status,
                       @Param("closedAt") LocalDateTime closedAt);
 
+    /** 마감 예정 시각 설정/변경/해제(null) — #1 마감일 예약. */
+    void updateClosesAt(@Param("id") Long id, @Param("closesAt") LocalDateTime closesAt);
+
+    /** 배치(#1): closes_at 도달한 PUBLISHED 폼 id 목록. */
+    List<Long> findExpiredPublished(@Param("now") LocalDateTime now);
+
     void softDelete(@Param("id") Long id, @Param("deletedAt") LocalDateTime deletedAt);
 
     // --- 관리자 (§7.10) ---

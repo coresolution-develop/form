@@ -32,6 +32,7 @@ public enum ErrorCode {
     // 409
     DUPLICATE_RESPONSE(HttpStatus.CONFLICT, "이미 응답한 폼입니다."),
     ILLEGAL_STATE(HttpStatus.CONFLICT, "현재 상태에서는 처리할 수 없습니다."),
+    FORM_NOT_EDITABLE(HttpStatus.CONFLICT, "발행된 폼은 질문을 수정할 수 없습니다. 질문을 바꾸려면 새 폼을 만들어 주세요."),
     PLAN_LIMIT_EXCEEDED(HttpStatus.CONFLICT, "플랜 한도를 초과했습니다."),
 
     // 429

@@ -57,6 +57,11 @@ public class FormService {
                 .build();
         formMapper.insert(form);
 
+        if (req.closesAt() != null) {
+            requireFuture(req.closesAt());
+            formMapper.updateClosesAt(form.getId(), req.closesAt());
+        }
+
         return getDetail(userId, form.getId());
     }
 
@@ -85,6 +90,25 @@ public class FormService {
         Integer responseLimit = req.responseLimit() != null ? req.responseLimit() : form.getResponseLimit();
         formMapper.updateMeta(formId, title, description, responseLimit);
         return getDetail(userId, formId);
+    }
+
+    /**
+     * 마감 예정 시각 설정/변경/해제(null). 발행 후에도 허용(#9 필드 잠금과 무관한 운영 메타).
+     * 과거 시각은 거부, null은 무기한(해제).
+     */
+    @Transactional
+    public void updateClosesAt(Long userId, Long formId, LocalDateTime closesAt) {
+        loadOwnedForm(userId, formId);
+        if (closesAt != null) {
+            requireFuture(closesAt);
+        }
+        formMapper.updateClosesAt(formId, closesAt);
+    }
+
+    private void requireFuture(LocalDateTime closesAt) {
+        if (!closesAt.isAfter(LocalDateTime.now())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "마감 예정 시각은 현재보다 미래여야 합니다.");
+        }
     }
 
     @Transactional

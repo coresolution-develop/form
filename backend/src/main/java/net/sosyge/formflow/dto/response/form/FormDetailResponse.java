@@ -16,6 +16,7 @@ public record FormDetailResponse(
         Integer responseLimit,
         long responseCount,
         LocalDateTime closedAt,
+        LocalDateTime closesAt,
         String publicUrl,
         List<FieldResponse> fields
 ) {
@@ -29,6 +30,7 @@ public record FormDetailResponse(
                 form.getResponseLimit(),
                 responseCount,
                 form.getClosedAt(),
+                form.getClosesAt(),
                 publicUrl,
                 fields.stream().map(FieldResponse::from).toList()
         );
