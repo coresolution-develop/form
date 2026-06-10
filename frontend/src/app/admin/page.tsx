@@ -12,7 +12,7 @@ export default function AdminDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-20 text-blue-600">
+      <div className="flex justify-center py-20 text-brand">
         <Spinner className="h-8 w-8" />
       </div>
     );
@@ -51,7 +51,7 @@ export default function AdminDashboardPage() {
       <section>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">최근 관리 작업</h2>
-          <Link href="/admin/audits" className="text-sm text-blue-600 hover:underline">
+          <Link href="/admin/audits" className="text-sm text-brand hover:underline">
             전체 보기
           </Link>
         </div>

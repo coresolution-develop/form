@@ -32,7 +32,7 @@ export function AdminGuard({ children }: { children: ReactNode }) {
   // 세션 복구 전(loading) 또는 권한 없는 사용자 → 리다이렉트 진행 중 스피너
   if (status !== 'authed' || !isAdmin) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-blue-600">
+      <div className="flex min-h-screen items-center justify-center text-brand">
         <Spinner className="h-8 w-8" />
       </div>
     );

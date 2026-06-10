@@ -16,7 +16,7 @@ export function MultiChoiceChart({ distribution }: { distribution: Distribution[
           <Tooltip
             formatter={(v: number, _n, p: any) => [`${v}명 (${Math.round((p.payload.ratio ?? 0) * 100)}%)`, '응답']}
           />
-          <Bar dataKey="count" fill="#7c3aed" radius={[0, 4, 4, 0]} isAnimationActive={false} />
+          <Bar dataKey="count" fill="#378ADD" radius={[0, 4, 4, 0]} isAnimationActive={false} />
         </BarChart>
       </ResponsiveContainer>
     </div>

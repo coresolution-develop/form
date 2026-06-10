@@ -5,9 +5,11 @@ import { useParams } from 'next/navigation';
 import { MultiChoiceChart } from '@/components/stats/MultiChoiceChart';
 import { SingleChoiceChart } from '@/components/stats/SingleChoiceChart';
 import { TextSamples } from '@/components/stats/TextSamples';
+import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { useForm } from '@/hooks/useForms';
 import { useStats } from '@/hooks/useStats';
+import { downloadStatsCsv } from '@/lib/responses';
 import { FIELD_TYPE_LABELS, type FieldType } from '@/types/field';
 
 export default function StatsPage() {
@@ -19,7 +21,7 @@ export default function StatsPage() {
 
   if (formQuery.isLoading || statsQuery.isLoading) {
     return (
-      <div className="flex justify-center py-20 text-blue-600">
+      <div className="flex justify-center py-20 text-brand">
         <Spinner className="h-8 w-8" />
       </div>
     );
@@ -33,7 +35,7 @@ export default function StatsPage() {
         <p className="text-gray-600">
           {status === 403 ? '이 폼의 통계를 볼 권한이 없습니다.' : '통계를 불러올 수 없습니다.'}
         </p>
-        <Link href="/dashboard" className="mt-3 inline-block text-sm text-blue-600 hover:underline">
+        <Link href="/dashboard" className="mt-3 inline-block text-sm text-brand hover:underline">
           대시보드로
         </Link>
       </div>
@@ -46,14 +48,26 @@ export default function StatsPage() {
     return <p className="py-20 text-center text-gray-500">통계를 불러올 수 없습니다.</p>;
   }
 
+  const hasChartData = stats.fields.some((f) => f.distribution && f.distribution.length > 0);
+
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-6">
-        <Link href={`/forms/${formId}/responses`} className="text-sm text-gray-500 hover:text-gray-800">
-          ← 응답 목록
-        </Link>
-        <h1 className="mt-1 text-2xl font-bold text-gray-900">{form.title} · 통계</h1>
-        <p className="text-sm text-gray-500">총 {stats.totalResponses}개 응답</p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <Link href={`/forms/${formId}/responses`} className="text-sm text-gray-500 hover:text-gray-800">
+            ← 응답 목록
+          </Link>
+          <h1 className="mt-1 text-2xl font-bold text-gray-900">{form.title} · 통계</h1>
+          <p className="text-sm text-gray-500">총 {stats.totalResponses}개 응답</p>
+        </div>
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={!hasChartData}
+          onClick={() => downloadStatsCsv(stats, form.title)}
+        >
+          CSV 다운로드
+        </Button>
       </div>
 
       {stats.totalResponses === 0 ? (

@@ -6,6 +6,7 @@ import {
   deleteForm,
   getForm,
   listForms,
+  updateClosesAt,
   updateForm,
   updateFormStatus,
   type FormCreateInput,
@@ -70,5 +71,13 @@ export function useUpdateFormStatus(id: number) {
       qc.invalidateQueries({ queryKey: formKeys.detail(id) });
       qc.invalidateQueries({ queryKey: formKeys.all });
     },
+  });
+}
+
+export function useUpdateClosesAt(id: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (closesAt: string | null) => updateClosesAt(id, closesAt),
+    onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.detail(id) }),
   });
 }

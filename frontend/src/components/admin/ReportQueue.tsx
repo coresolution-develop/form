@@ -60,7 +60,7 @@ export function ReportQueue({ reports, onProcess }: Props) {
                     href={`/f/${r.formSlug}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="truncate text-blue-600 hover:underline"
+                    className="truncate text-brand hover:underline"
                     title={r.formTitle}
                   >
                     {r.formTitle}

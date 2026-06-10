@@ -45,6 +45,8 @@ export default function BuilderPage() {
   }
 
   const selectedField = form.fields.find((f) => f.id === selectedFieldId) ?? null;
+  // #9: DRAFT 상태에서만 질문(필드) 구조 편집 가능. 발행/마감 폼은 잠금.
+  const editMode = form.status === 'DRAFT';
 
   const onDeleteConfirm = () => {
     if (!toDelete) return;
@@ -67,7 +69,7 @@ export default function BuilderPage() {
           <div className="mx-auto max-w-2xl">
             <PreviewPanel title={form.title} description={form.description} fields={form.fields} />
           </div>
-        ) : (
+        ) : editMode ? (
           <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
             <section className="flex flex-col gap-4">
               <AddFieldMenu formId={formId} onCreated={(id) => select(id)} />
@@ -87,6 +89,16 @@ export default function BuilderPage() {
                 <p className="py-12 text-center text-sm text-gray-400">편집할 필드를 선택하세요.</p>
               )}
             </aside>
+          </div>
+        ) : (
+          <div className="mx-auto max-w-2xl">
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <p className="font-medium">발행된 폼은 질문을 수정할 수 없습니다. 질문을 바꾸려면 새 폼을 만들어 주세요.</p>
+              <p className="mt-1 text-xs text-amber-700">
+                이미 수집된 응답·통계의 정합성을 위해 발행 후에는 질문 구조가 잠깁니다.
+              </p>
+            </div>
+            <PreviewPanel title={form.title} description={form.description} fields={form.fields} />
           </div>
         )}
       </div>

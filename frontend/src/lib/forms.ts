@@ -36,6 +36,11 @@ export async function deleteForm(id: number): Promise<void> {
   await api.delete(`/api/forms/${id}`);
 }
 
+/** 마감 예정 시각 설정/해제 (#1). closesAt=null → 무기한. ISO 문자열(초 미포함 가능). */
+export async function updateClosesAt(id: number, closesAt: string | null): Promise<void> {
+  await api.patch(`/api/forms/${id}/closes-at`, { closesAt });
+}
+
 export async function updateFormStatus(
   id: number,
   status: FormStatus,

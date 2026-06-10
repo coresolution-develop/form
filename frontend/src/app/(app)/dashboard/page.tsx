@@ -47,6 +47,16 @@ export default function DashboardPage() {
     });
   };
 
+  const copyUrl = async (slug: string) => {
+    const url = `${window.location.origin}/f/${slug}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast('공개 URL을 복사했습니다.', 'success');
+    } catch {
+      toast('복사에 실패했습니다.', 'error');
+    }
+  };
+
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-6 flex items-center justify-between">
@@ -90,7 +100,16 @@ export default function DashboardPage() {
                   응답 {form.responseCount}
                   {form.responseLimit ? ` / ${form.responseLimit}` : ''}
                 </p>
-                <div className="mt-auto flex gap-2">
+                {form.status === 'PUBLISHED' && (
+                  <button
+                    type="button"
+                    onClick={() => copyUrl(form.slug)}
+                    className="mt-auto mb-2 rounded-lg bg-brand-light px-3 py-2 text-center text-sm font-medium text-brand-dark hover:bg-brand-light/70"
+                  >
+                    URL 복사
+                  </button>
+                )}
+                <div className={`${form.status === 'PUBLISHED' ? '' : 'mt-auto '}flex gap-2`}>
                   <Link
                     href={`/builder/${form.id}`}
                     className="flex-1 rounded-lg bg-gray-100 px-3 py-2 text-center text-sm text-gray-800 hover:bg-gray-200"

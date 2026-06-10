@@ -80,7 +80,7 @@ export default function AdminUsersPage() {
           value={status}
           onChange={(e) => onStatusChange(e.target.value as UserStatus | '')}
           aria-label="상태 필터"
-          className="h-10 rounded-lg border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none"
+          className="h-10 rounded-lg border border-gray-300 px-3 text-sm focus:border-brand focus:outline-none"
         >
           {STATUS_OPTIONS.map((s) => (
             <option key={s} value={s}>
@@ -102,7 +102,7 @@ export default function AdminUsersPage() {
       </div>
 
       {query.isLoading ? (
-        <div className="flex justify-center py-20 text-blue-600">
+        <div className="flex justify-center py-20 text-brand">
           <Spinner className="h-8 w-8" />
         </div>
       ) : query.isError || !query.data ? (

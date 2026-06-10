@@ -41,7 +41,7 @@ export default function AdminAuditsPage() {
       </div>
 
       {query.isLoading ? (
-        <div className="flex justify-center py-20 text-blue-600">
+        <div className="flex justify-center py-20 text-brand">
           <Spinner className="h-8 w-8" />
         </div>
       ) : query.isError || !query.data ? (

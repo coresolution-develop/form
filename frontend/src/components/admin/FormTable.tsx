@@ -61,7 +61,7 @@ export function FormTable({ forms, onForceClose }: Props) {
                       href={`/f/${f.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:underline"
+                      className="text-xs text-brand hover:underline"
                     >
                       공개 폼
                     </a>

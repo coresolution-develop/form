@@ -40,7 +40,7 @@ export function DailyTrendChart({ signups, responses }: Props) {
         <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
         <Tooltip />
         <Legend />
-        <Bar dataKey="signups" name="가입" fill="#2563eb" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+        <Bar dataKey="signups" name="가입" fill="#378ADD" radius={[4, 4, 0, 0]} isAnimationActive={false} />
         <Bar dataKey="responses" name="응답" fill="#7c3aed" radius={[4, 4, 0, 0]} isAnimationActive={false} />
       </BarChart>
     </ResponsiveContainer>

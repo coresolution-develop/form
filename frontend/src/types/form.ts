@@ -21,6 +21,7 @@ export interface FormDetail {
   responseLimit: number | null;
   responseCount: number;
   closedAt: string | null;
+  closesAt: string | null;
   publicUrl: string;
   fields: FormField[];
 }

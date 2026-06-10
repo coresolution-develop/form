@@ -74,7 +74,7 @@ export default function AdminReportsPage() {
       </div>
 
       {query.isLoading ? (
-        <div className="flex justify-center py-20 text-blue-600">
+        <div className="flex justify-center py-20 text-brand">
           <Spinner className="h-8 w-8" />
         </div>
       ) : query.isError || !query.data ? (
@@ -102,7 +102,7 @@ export default function AdminReportsPage() {
         <select
           value={nextStatus}
           onChange={(e) => setNextStatus(e.target.value as ReportStatus)}
-          className="mt-1 h-10 w-full rounded-lg border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none"
+          className="mt-1 h-10 w-full rounded-lg border border-gray-300 px-3 text-sm focus:border-brand focus:outline-none"
         >
           {PROCESS_OPTIONS.map((s) => (
             <option key={s} value={s}>

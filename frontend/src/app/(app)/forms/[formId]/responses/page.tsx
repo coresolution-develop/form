@@ -20,7 +20,7 @@ export default function ResponsesPage() {
 
   if (formQuery.isLoading || listQuery.isLoading) {
     return (
-      <div className="flex justify-center py-20 text-blue-600">
+      <div className="flex justify-center py-20 text-brand">
         <Spinner className="h-8 w-8" />
       </div>
     );
@@ -34,7 +34,7 @@ export default function ResponsesPage() {
         <p className="text-gray-600">
           {status === 403 ? '이 폼의 응답을 볼 권한이 없습니다.' : '응답을 불러올 수 없습니다.'}
         </p>
-        <Link href="/dashboard" className="mt-3 inline-block text-sm text-blue-600 hover:underline">
+        <Link href="/dashboard" className="mt-3 inline-block text-sm text-brand hover:underline">
           대시보드로
         </Link>
       </div>

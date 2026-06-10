@@ -5,9 +5,14 @@ import { useEffect, useState } from 'react';
 import { StatusBadge } from '@/components/forms/StatusBadge';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
-import { useUpdateForm, useUpdateFormStatus } from '@/hooks/useForms';
+import { useUpdateClosesAt, useUpdateForm, useUpdateFormStatus } from '@/hooks/useForms';
 import { toUserMessage } from '@/lib/errorMessage';
 import type { FormDetail } from '@/types/form';
+
+/** datetime-local 입력용 'YYYY-MM-DDTHH:mm' (로컬). */
+function toLocalInput(iso: string | null): string {
+  return iso ? iso.slice(0, 16) : '';
+}
 
 interface Props {
   form: FormDetail;
@@ -19,9 +24,38 @@ export function BuilderHeader({ form, previewMode, onTogglePreview }: Props) {
   const { toast } = useToast();
   const updateForm = useUpdateForm(form.id);
   const updateStatus = useUpdateFormStatus(form.id);
+  const updateClosesAt = useUpdateClosesAt(form.id);
   const [title, setTitle] = useState(form.title);
+  const [closesAt, setClosesAt] = useState(toLocalInput(form.closesAt));
 
   useEffect(() => setTitle(form.title), [form.title]);
+  useEffect(() => setClosesAt(toLocalInput(form.closesAt)), [form.closesAt]);
+
+  const saveClosesAt = (value: string) => {
+    setClosesAt(value);
+    if (!value) {
+      updateClosesAt.mutate(null, {
+        onSuccess: () => toast('마감 예정일을 해제했습니다.', 'success'),
+        onError: (e: any) => {
+          setClosesAt(toLocalInput(form.closesAt));
+          toast(toUserMessage(e?.response?.data?.code, '마감일 변경 실패'), 'error');
+        },
+      });
+      return;
+    }
+    if (new Date(value).getTime() <= Date.now()) {
+      setClosesAt(toLocalInput(form.closesAt));
+      toast('마감 예정 시각은 현재보다 미래여야 합니다.', 'error');
+      return;
+    }
+    updateClosesAt.mutate(value, {
+      onSuccess: () => toast('마감 예정일을 설정했습니다.', 'success'),
+      onError: (e: any) => {
+        setClosesAt(toLocalInput(form.closesAt));
+        toast(toUserMessage(e?.response?.data?.code, '마감일 변경 실패'), 'error');
+      },
+    });
+  };
 
   const saveTitle = () => {
     const t = title.trim();
@@ -76,6 +110,17 @@ export function BuilderHeader({ form, previewMode, onTogglePreview }: Props) {
       </div>
 
       <div className="flex items-center gap-2">
+        <label className="flex items-center gap-1.5 text-xs text-gray-500">
+          마감 예정
+          <input
+            type="datetime-local"
+            value={closesAt}
+            onChange={(e) => saveClosesAt(e.target.value)}
+            aria-label="마감 예정 시각 (비우면 무기한)"
+            className="rounded-lg border border-gray-300 px-2 py-1 text-sm text-gray-800 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
+          />
+        </label>
+
         <Button variant={previewMode ? 'primary' : 'secondary'} size="sm" onClick={onTogglePreview}>
           {previewMode ? '편집으로' : '미리보기'}
         </Button>
