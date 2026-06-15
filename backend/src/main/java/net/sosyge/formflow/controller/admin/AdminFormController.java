@@ -38,6 +38,11 @@ public class AdminFormController {
         return ApiResponse.ok(adminFormService.getForms(q, page, size));
     }
 
+    @GetMapping("/{id}")
+    public ApiResponse<net.sosyge.formflow.dto.response.form.FormDetailResponse> detail(@PathVariable Long id) {
+        return ApiResponse.ok(adminFormService.getFormDetail(id));
+    }
+
     @PatchMapping("/{id}/force-close")
     public ApiResponse<Void> forceClose(@CurrentUser CustomUserDetails admin,
                                         @PathVariable Long id,

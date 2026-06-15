@@ -7,9 +7,12 @@ import net.sosyge.formflow.domain.AdminAuditTargetType;
 import net.sosyge.formflow.domain.User;
 import net.sosyge.formflow.domain.UserRole;
 import net.sosyge.formflow.domain.UserStatus;
+import net.sosyge.formflow.dto.response.admin.AdminUserDetail;
 import net.sosyge.formflow.dto.response.admin.AdminUserItem;
+import net.sosyge.formflow.dto.response.form.FormSummaryResponse;
 import net.sosyge.formflow.exception.BusinessException;
 import net.sosyge.formflow.exception.ErrorCode;
+import net.sosyge.formflow.mapper.FormMapper;
 import net.sosyge.formflow.mapper.RefreshTokenMapper;
 import net.sosyge.formflow.mapper.UserMapper;
 import net.sosyge.formflow.service.mail.MailFacade;
@@ -26,6 +29,7 @@ import java.util.Map;
 public class AdminUserService {
 
     private final UserMapper userMapper;
+    private final FormMapper formMapper;
     private final RefreshTokenMapper refreshTokenMapper;
     private final AdminAuditService auditService;
     private final MailFacade mailFacade;
@@ -36,6 +40,20 @@ public class AdminUserService {
         List<AdminUserItem> items = userMapper.findPageForAdmin(status, email, offset, size);
         long total = userMapper.countForAdmin(status, email);
         return PageResponse.of(items, page, size, total);
+    }
+
+    /** 어뷰징 조사용 사용자 상세: 기본정보 + 보유 폼 + 집계 (§10.2). */
+    @Transactional(readOnly = true)
+    public AdminUserDetail getUserDetail(Long userId) {
+        User u = userMapper.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+        List<FormSummaryResponse> forms = formMapper.findSummariesByUserId(userId);
+        long totalResponses = forms.stream().mapToLong(FormSummaryResponse::getResponseCount).sum();
+        return new AdminUserDetail(
+                u.getId(), u.getEmail(), u.getNickname(), u.getRole(), u.getStatus(),
+                u.getPlan() == null ? null : u.getPlan().name(),
+                u.getSuspendedReason(), u.getEmailVerifiedAt(), u.getLastLoginAt(), u.getCreatedAt(),
+                forms.size(), totalResponses, forms);
     }
 
     /**

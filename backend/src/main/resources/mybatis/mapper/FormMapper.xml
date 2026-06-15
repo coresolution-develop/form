@@ -44,6 +44,22 @@
         LIMIT #{size} OFFSET #{offset}
     </select>
 
+    <select id="findSummariesByUserId"
+            resultType="net.sosyge.formflow.dto.response.form.FormSummaryResponse">
+        SELECT f.id          AS id,
+               f.slug        AS slug,
+               f.title       AS title,
+               f.status      AS status,
+               f.response_limit AS response_limit,
+               f.created_at  AS created_at,
+               COUNT(r.id)   AS response_count
+        FROM forms f
+        LEFT JOIN responses r ON r.form_id = f.id
+        WHERE f.user_id = #{userId} AND f.deleted_at IS NULL
+        GROUP BY f.id, f.slug, f.title, f.status, f.response_limit, f.created_at
+        ORDER BY f.created_at DESC, f.id DESC
+    </select>
+
     <select id="countByUserId" resultType="long">
         SELECT COUNT(*) FROM forms WHERE user_id = #{userId} AND deleted_at IS NULL
     </select>

@@ -42,7 +42,7 @@ public class AdminReportController {
                                     @Valid @RequestBody AdminReportUpdateRequest req,
                                     HttpServletRequest http) {
         adminReportService.updateReport(admin.getId(), id, req.status(), req.detail(),
-                ClientIps.resolve(http));
+                req.closeForm(), ClientIps.resolve(http));
         return ApiResponse.ok();
     }
 }

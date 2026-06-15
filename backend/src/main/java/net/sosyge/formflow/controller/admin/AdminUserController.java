@@ -37,6 +37,11 @@ public class AdminUserController {
         return ApiResponse.ok(adminUserService.getUsers(status, email, page, size));
     }
 
+    @GetMapping("/{id}")
+    public ApiResponse<net.sosyge.formflow.dto.response.admin.AdminUserDetail> detail(@PathVariable Long id) {
+        return ApiResponse.ok(adminUserService.getUserDetail(id));
+    }
+
     @PatchMapping("/{id}/status")
     public ApiResponse<Void> updateStatus(@CurrentUser CustomUserDetails admin,
                                           @PathVariable Long id,

@@ -31,6 +31,9 @@ public interface FormMapper {
 
     long countByUserId(@Param("userId") Long userId);
 
+    /** 관리자 사용자 상세: 해당 사용자의 모든 폼 요약 (페이징 없음, 사용자당 ≤10개). */
+    List<FormSummaryResponse> findSummariesByUserId(@Param("userId") Long userId);
+
     long countActiveByUserId(@Param("userId") Long userId);
 
     void updateMeta(@Param("id") Long id,

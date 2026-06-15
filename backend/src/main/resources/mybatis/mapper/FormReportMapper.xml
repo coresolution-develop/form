@@ -16,6 +16,9 @@
                r.form_id       AS form_id,
                f.title         AS form_title,
                f.slug          AS form_slug,
+               f.status        AS form_status,
+               u.id            AS owner_id,
+               u.email         AS owner_email,
                r.reason        AS reason,
                r.detail        AS detail,
                r.status        AS status,
@@ -27,6 +30,7 @@
                r.created_at    AS created_at
         FROM form_reports r
         JOIN forms f ON f.id = r.form_id
+        JOIN users u ON u.id = f.user_id
         <where>
             <if test="status != null">r.status = #{status}</if>
         </where>

@@ -25,6 +25,7 @@ public class AdminReportService {
 
     private final FormReportMapper formReportMapper;
     private final AdminAuditService auditService;
+    private final AdminFormService adminFormService;
 
     @Transactional(readOnly = true)
     public PageResponse<AdminReportItem> getReports(ReportStatus status, int page, int size) {
@@ -34,9 +35,13 @@ public class AdminReportService {
         return PageResponse.of(items, page, size, total);
     }
 
-    /** 신고 상태 갱신 + handled_by/handled_at + 감사 로그 (§10.2). */
+    /**
+     * 신고 상태 갱신 + handled_by/handled_at + 감사 로그 (§10.2).
+     * closeForm=true면 대상 폼도 함께 강제 마감(원클릭) — 폼 마감 감사·소유자 메일은 forceClose가 처리.
+     */
     @Transactional
-    public void updateReport(Long adminId, Long reportId, ReportStatus status, String detail, String ip) {
+    public void updateReport(Long adminId, Long reportId, ReportStatus status, String detail,
+                             boolean closeForm, String ip) {
         FormReport report = formReportMapper.findById(reportId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "신고를 찾을 수 없습니다."));
 
@@ -46,7 +51,13 @@ public class AdminReportService {
         auditDetail.put("formId", report.getFormId());
         auditDetail.put("status", status.name());
         auditDetail.put("detail", detail == null ? "" : detail);
+        auditDetail.put("closeForm", closeForm);
         auditService.record(adminId, AdminAction.REPORT_RESOLVE, AdminAuditTargetType.REPORT,
                 reportId, auditDetail, ip);
+
+        if (closeForm) {
+            String reason = (detail != null && !detail.isBlank()) ? detail : "신고 처리에 따른 강제 마감";
+            adminFormService.forceClose(adminId, report.getFormId(), reason, ip);
+        }
     }
 }
