@@ -1,4 +1,4 @@
-import type { FormStatus } from '@/types/form';
+import type { FormStatus, FormSummary } from '@/types/form';
 import type { UserRole, UserStatus } from '@/types/user';
 
 export type ReportReason = 'SPAM' | 'PHISHING' | 'ILLEGAL' | 'PRIVACY' | 'OTHER';
@@ -14,6 +14,23 @@ export interface AdminUserItem {
   formCount: number;
   lastLoginAt: string | null;
   createdAt: string;
+}
+
+/** GET /api/admin/users/{id} 상세 (§10.2 어뷰징 조사). */
+export interface AdminUserDetail {
+  id: number;
+  email: string;
+  nickname: string;
+  role: UserRole;
+  status: UserStatus;
+  plan: string | null;
+  suspendedReason: string | null;
+  emailVerifiedAt: string | null;
+  lastLoginAt: string | null;
+  createdAt: string;
+  formCount: number;
+  totalResponses: number;
+  forms: FormSummary[];
 }
 
 /** GET /api/admin/forms 아이템 (§7.10). */
@@ -35,6 +52,9 @@ export interface AdminReportItem {
   formId: number;
   formTitle: string;
   formSlug: string;
+  formStatus: FormStatus;
+  ownerId: number;
+  ownerEmail: string;
   reason: ReportReason;
   detail: string | null;
   status: ReportStatus;

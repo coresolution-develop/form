@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { UserStatusBadge } from '@/components/admin/UserStatusBadge';
 import { formatDate, formatDateTime } from '@/lib/datetime';
@@ -39,7 +40,9 @@ export function UserTable({ users, onSuspend, onRestore }: Props) {
             return (
               <tr key={u.id}>
                 <td className="whitespace-nowrap px-4 py-3 text-gray-800">
-                  {u.email}
+                  <Link href={`/admin/users/${u.id}`} className="text-brand hover:underline">
+                    {u.email}
+                  </Link>
                   {isAdminRow && (
                     <span className="ml-2 rounded bg-purple-100 px-1.5 py-0.5 text-xs font-medium text-purple-700">
                       관리자

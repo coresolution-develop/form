@@ -3,10 +3,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   forceCloseForm,
+  getAdminFormDetail,
   getAudits,
   getDashboard,
   getForms,
   getReports,
+  getUserDetail,
   getUsers,
   updateReport,
   updateUserStatus,
@@ -39,10 +41,27 @@ export function useAdminUsers(page: number, filters: AdminUserFilters) {
   });
 }
 
+export function useAdminUserDetail(id: number) {
+  return useQuery({
+    queryKey: ['admin', 'user', id],
+    queryFn: () => getUserDetail(id),
+    enabled: Number.isFinite(id) && id > 0,
+  });
+}
+
 export function useAdminForms(page: number, keyword: string) {
   return useQuery({
     queryKey: adminKeys.forms(page, keyword),
     queryFn: () => getForms(keyword, page),
+  });
+}
+
+/** 신고 조사용 폼 미리보기 (상태 무관). id가 null이면 미조회. */
+export function useAdminFormDetail(id: number | null) {
+  return useQuery({
+    queryKey: ['admin', 'form', id],
+    queryFn: () => getAdminFormDetail(id as number),
+    enabled: id != null && id > 0,
   });
 }
 
@@ -68,6 +87,7 @@ export function useUpdateUserStatus() {
       updateUserStatus(vars.id, vars.status, vars.reason),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'users'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'user'] });
       qc.invalidateQueries({ queryKey: adminKeys.dashboard });
     },
   });
@@ -87,10 +107,11 @@ export function useForceCloseForm() {
 export function useUpdateReport() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (vars: { id: number; status: ReportStatus; detail?: string }) =>
-      updateReport(vars.id, vars.status, vars.detail),
+    mutationFn: (vars: { id: number; status: ReportStatus; detail?: string; closeForm?: boolean }) =>
+      updateReport(vars.id, vars.status, vars.detail, vars.closeForm ?? false),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin', 'reports'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'forms'] });
       qc.invalidateQueries({ queryKey: adminKeys.dashboard });
     },
   });

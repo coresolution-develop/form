@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
 import { formatDateTime } from '@/lib/datetime';
@@ -13,6 +14,7 @@ import {
 interface Props {
   reports: AdminReportItem[];
   onProcess: (report: AdminReportItem) => void;
+  onPreview: (report: AdminReportItem) => void;
 }
 
 const STATUS_STYLES: Record<ReportStatus, string> = {
@@ -25,7 +27,7 @@ const STATUS_STYLES: Record<ReportStatus, string> = {
 /** §10.2 누적 감지 임계: 같은 폼 PENDING 3건 이상이면 우선 처리 강조. */
 const ACCUMULATION_THRESHOLD = 3;
 
-export function ReportQueue({ reports, onProcess }: Props) {
+export function ReportQueue({ reports, onProcess, onPreview }: Props) {
   if (reports.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-gray-300 py-10 text-center text-sm text-gray-400">
@@ -55,16 +57,22 @@ export function ReportQueue({ reports, onProcess }: Props) {
                 <td className="whitespace-nowrap px-4 py-3 text-gray-500">
                   {formatDateTime(r.createdAt)}
                 </td>
-                <td className="max-w-[200px] px-4 py-3">
-                  <a
-                    href={`/f/${r.formSlug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="truncate text-brand hover:underline"
-                    title={r.formTitle}
+                <td className="max-w-[220px] px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => onPreview(r)}
+                    className="block max-w-full truncate text-left text-brand hover:underline"
+                    title={`${r.formTitle} 미리보기`}
                   >
                     {r.formTitle}
-                  </a>
+                  </button>
+                  <Link
+                    href={`/admin/users/${r.ownerId}`}
+                    className="block max-w-full truncate text-xs text-gray-400 hover:text-gray-600 hover:underline"
+                    title={r.ownerEmail}
+                  >
+                    소유자: {r.ownerEmail}
+                  </Link>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-gray-700">
                   {REPORT_REASON_LABELS[r.reason]}

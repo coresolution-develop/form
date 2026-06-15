@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { FormPreviewModal } from '@/components/admin/FormPreviewModal';
 import { Pagination } from '@/components/admin/Pagination';
 import { ReportQueue } from '@/components/admin/ReportQueue';
 import { Button } from '@/components/ui/Button';
@@ -28,6 +29,8 @@ export default function AdminReportsPage() {
   const [target, setTarget] = useState<AdminReportItem | null>(null);
   const [nextStatus, setNextStatus] = useState<ReportStatus>('RESOLVED');
   const [detail, setDetail] = useState('');
+  const [closeForm, setCloseForm] = useState(false);
+  const [previewId, setPreviewId] = useState<number | null>(null);
 
   const query = useAdminReports(page, status || null);
   const mutation = useUpdateReport();
@@ -36,15 +39,23 @@ export default function AdminReportsPage() {
     setTarget(r);
     setNextStatus('RESOLVED');
     setDetail('');
+    setCloseForm(false);
   };
+
+  const alreadyClosed = target?.formStatus === 'CLOSED';
 
   const confirmProcess = () => {
     if (!target) return;
     mutation.mutate(
-      { id: target.id, status: nextStatus, detail: detail.trim() || undefined },
+      { id: target.id, status: nextStatus, detail: detail.trim() || undefined, closeForm: closeForm && !alreadyClosed },
       {
         onSuccess: () => {
-          toast(`신고를 '${REPORT_STATUS_LABELS[nextStatus]}'(으)로 처리했습니다.`, 'success');
+          toast(
+            closeForm && !alreadyClosed
+              ? `신고를 처리하고 대상 폼을 강제 마감했습니다.`
+              : `신고를 '${REPORT_STATUS_LABELS[nextStatus]}'(으)로 처리했습니다.`,
+            'success',
+          );
           setTarget(null);
         },
         onError: (e: any) =>
@@ -81,7 +92,7 @@ export default function AdminReportsPage() {
         <p className="py-20 text-center text-gray-500">신고 목록을 불러올 수 없습니다.</p>
       ) : (
         <>
-          <ReportQueue reports={query.data.items} onProcess={openProcess} />
+          <ReportQueue reports={query.data.items} onProcess={openProcess} onPreview={(r) => setPreviewId(r.formId)} />
           <Pagination
             page={query.data.page}
             size={query.data.size}
@@ -117,6 +128,16 @@ export default function AdminReportsPage() {
           rows={3}
           className="mt-3"
         />
+        <label className="mt-3 flex items-center gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            checked={closeForm}
+            disabled={alreadyClosed}
+            onChange={(e) => setCloseForm(e.target.checked)}
+            className="h-4 w-4 rounded accent-brand"
+          />
+          {alreadyClosed ? '대상 폼이 이미 마감됨' : '이 폼도 함께 강제 마감 (소유자에게 메일 통보)'}
+        </label>
         <div className="mt-6 flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setTarget(null)}>
             취소
@@ -126,6 +147,8 @@ export default function AdminReportsPage() {
           </Button>
         </div>
       </Modal>
+
+      <FormPreviewModal formId={previewId} onClose={() => setPreviewId(null)} />
     </div>
   );
 }

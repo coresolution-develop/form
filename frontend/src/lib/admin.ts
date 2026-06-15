@@ -5,9 +5,11 @@ import type {
   AdminDashboard,
   AdminFormItem,
   AdminReportItem,
+  AdminUserDetail,
   AdminUserItem,
   ReportStatus,
 } from '@/types/admin';
+import type { FormDetail } from '@/types/form';
 import type { UserStatus } from '@/types/user';
 
 const ADMIN_PAGE_SIZE = 50;
@@ -40,6 +42,11 @@ export async function getUsers(
   return res.data.data as PageResponse<AdminUserItem>;
 }
 
+export async function getUserDetail(id: number): Promise<AdminUserDetail> {
+  const res = await api.get(`/api/admin/users/${id}`);
+  return res.data.data as AdminUserDetail;
+}
+
 export async function updateUserStatus(
   id: number,
   status: UserStatus,
@@ -64,6 +71,12 @@ export async function forceCloseForm(id: number, reason: string): Promise<void> 
   await api.patch(`/api/admin/forms/${id}/force-close`, { reason });
 }
 
+/** 관리자 폼 미리보기 (상태 무관, 필드 포함). */
+export async function getAdminFormDetail(id: number): Promise<FormDetail> {
+  const res = await api.get(`/api/admin/forms/${id}`);
+  return res.data.data as FormDetail;
+}
+
 // ===== 신고 (§7.10 / §10.2) =====
 export async function getReports(
   status: ReportStatus | null,
@@ -80,8 +93,9 @@ export async function updateReport(
   id: number,
   status: ReportStatus,
   detail?: string,
+  closeForm = false,
 ): Promise<void> {
-  await api.patch(`/api/admin/reports/${id}`, { status, detail: detail ?? null });
+  await api.patch(`/api/admin/reports/${id}`, { status, detail: detail ?? null, closeForm });
 }
 
 // ===== 감사 로그 (§7.10) =====
