@@ -1,0 +1,16 @@
+# FormFlow 백엔드 dev 유닛 — Iwinv 서버 dev 인스턴스 (prod formflow.service 와 포트·경로 분리).
+# SPRING_PROFILES_ACTIVE=dev 는 /opt/formflow-dev/.env 에서 지정한다.
+[Unit]
+Description=FormFlow Backend (dev)
+After=network.target mysqld.service redis.service
+
+[Service]
+Type=simple
+EnvironmentFile=/opt/formflow-dev/.env
+Environment=JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+ExecStart=/usr/lib/jvm/java-17-openjdk/bin/java -jar /opt/formflow-dev/formflow.jar --server.port=9001
+Restart=on-failure
+User=root
+
+[Install]
+WantedBy=multi-user.target

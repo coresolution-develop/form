@@ -1,0 +1,16 @@
+# FormFlow 프론트엔드 dev 유닛 — Iwinv 서버 dev 인스턴스 (prod 와 포트·경로 분리).
+[Unit]
+Description=FormFlow Frontend (dev)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/formflow-frontend-dev
+Environment=PORT=3002
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+User=root
+
+[Install]
+WantedBy=multi-user.target

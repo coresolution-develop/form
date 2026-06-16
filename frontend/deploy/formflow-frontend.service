@@ -1,0 +1,18 @@
+# FormFlow 프론트엔드 systemd 유닛 — 현재 Iwinv 서버 실제 구성 반영.
+# deploy-frontend.sh 는 빌드 산출물(.next 등)만 교체하며 이 파일은 자동 설치하지 않는다.
+# 유닛 자체를 바꿀 때만 서버에 복사 후 `systemctl daemon-reload`.
+[Unit]
+Description=FormFlow Frontend
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/formflow-frontend
+Environment=PORT=3001
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+User=root
+
+[Install]
+WantedBy=multi-user.target

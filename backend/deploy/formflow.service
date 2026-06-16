@@ -1,0 +1,17 @@
+# FormFlow 백엔드 systemd 유닛 — 현재 Iwinv 서버 실제 구성 반영.
+# deploy.sh 는 jar(/opt/formflow/formflow.jar)만 교체하며 이 파일은 자동 설치하지 않는다.
+# 유닛 자체를 바꿀 때만 서버에 복사 후 `systemctl daemon-reload`.
+[Unit]
+Description=FormFlow Backend
+After=network.target mysqld.service redis.service
+
+[Service]
+Type=simple
+EnvironmentFile=/opt/formflow/.env
+Environment=JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+ExecStart=/usr/lib/jvm/java-17-openjdk/bin/java -jar /opt/formflow/formflow.jar --server.port=9000
+Restart=on-failure
+User=root
+
+[Install]
+WantedBy=multi-user.target
