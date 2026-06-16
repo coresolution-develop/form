@@ -1,0 +1,11 @@
+# 운영(prod) 프로필 — Iwinv 서버. 가변값(도메인·DB·secret)은 /opt/formflow/.env 로 주입.
+# 보안 토글은 여기서 명시적으로 ON 한다(.env 실수로 꺼지지 않도록).
+formflow:
+  mail:
+    provider: smtp        # Iwinv 는 NCP Mailer 미사용 → SMTP
+  rate-limit:
+    enabled: true
+
+logging:
+  level:
+    net.sosyge.formflow: INFO   # 운영은 DEBUG 로깅 끄기

@@ -1,0 +1,7 @@
+# 개발 검증(dev) 프로필 — Iwinv 서버 dev 인스턴스. 가변값은 /opt/formflow-dev/.env 로 주입.
+# prod 와 동일한 보안 설정으로 검증하되, 로깅은 DEBUG(application.yml 기본값 상속).
+formflow:
+  mail:
+    provider: smtp
+  rate-limit:
+    enabled: true
