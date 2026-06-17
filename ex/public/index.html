@@ -94,6 +94,7 @@
       <span class="month" id="month"></span>
       <button class="iconbtn" id="next">▶</button>
       <button class="btn primary" id="sync">↻ 시트와 동기화</button>
+      <button class="btn" id="rollmonth">＋ 다음 달 준비</button>
       <span class="hint" id="syncmsg"></span>
     </div>
     <div class="gridwrap"><table class="grid" id="gridtable"></table></div>
@@ -151,7 +152,14 @@ document.getElementById('prev').onclick = () => loadGrid(shiftMonth(state.month,
 document.getElementById('next').onclick = () => loadGrid(shiftMonth(state.month, +1));
 document.getElementById('sync').onclick = async () => {
   const msg = document.getElementById('syncmsg'); msg.textContent = '동기화 중…';
-  try { const r = await send('/reconcile', 'POST'); msg.textContent = `반영 ${r.reconciled}건 · 삭제 ${r.deleted}건`; await loadGrid(state.month); }
+  try { const r = await send('/reconcile?month=' + state.month, 'POST'); msg.textContent = `${r.month} 반영 ${r.reconciled}명 · 정리 ${r.clearedAssignments}건`; await loadGrid(state.month); }
+  catch (e) { msg.textContent = '실패: ' + (e.message || e.error || '') + ' (해당 월 탭이 없을 수 있음)'; }
+};
+document.getElementById('rollmonth').onclick = async () => {
+  const cfg = await api('/config');
+  if (!confirm(`${cfg.activeMonth}의 다음 달 탭을 만들고 직원 명부를 채웁니다 (코드는 빈칸). 진행할까요?`)) return;
+  const msg = document.getElementById('syncmsg'); msg.textContent = '다음 달 준비 중…';
+  try { const r = await send('/months/roll', 'POST', {}); msg.textContent = `${r.to} 탭 ${r.created ? '생성' : '갱신'} · 직원 ${r.employees}명`; await loadGrid(r.to); }
   catch (e) { msg.textContent = '실패: ' + (e.message || e.error || ''); }
 };
 

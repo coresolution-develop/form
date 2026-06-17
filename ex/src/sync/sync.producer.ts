@@ -20,13 +20,13 @@ export class SyncProducer {
     );
   }
 
-  /** DB→시트: 같은 직원이면 직렬화 */
-  async enqueueDbToSheet(employeeId: string) {
+  /** DB→시트: 같은 (직원, 월)이면 직렬화 */
+  async enqueueDbToSheet(employeeId: string, month: string) {
     await this.queue.add(
       'db-to-sheet',
-      { employeeId },
+      { employeeId, month },
       {
-        jobId: `db-${employeeId}`,
+        jobId: `db-${employeeId}-${month}`,
         removeOnComplete: true,
         removeOnFail: 100,
       },

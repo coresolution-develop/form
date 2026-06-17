@@ -12,6 +12,17 @@ export function daysInMonth(month: string): number {
   return new Date(Date.UTC(y, m, 0)).getUTCDate();
 }
 
+/** 다음 달 (2026-12 → 2027-01) */
+export function nextMonth(month: string): string {
+  let [y, m] = month.split('-').map(Number);
+  m += 1;
+  if (m > 12) {
+    m = 1;
+    y += 1;
+  }
+  return `${y}-${String(m).padStart(2, '0')}`;
+}
+
 /** month의 day일을 'YYYY-MM-DD' 로 */
 export function isoDate(month: string, day: number): string {
   return `${month}-${String(day).padStart(2, '0')}`;

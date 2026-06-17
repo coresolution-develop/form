@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -15,7 +16,8 @@ import { SyncProducer } from '../sync/sync.producer';
 import { SheetClientService } from '../sheets/sheet-client.service';
 import { SheetWriterService } from '../sheets/sheet-writer.service';
 import { Contribution } from './seed.data';
-import { daysInMonth } from './dates';
+import { daysInMonth, isValidMonth, monthDays, monthRange, nextMonth } from './dates';
+import { gridTab } from '../sheets/sheets.constants';
 import {
   loadAggContext,
   orderedTotals,
@@ -110,7 +112,8 @@ export class ScheduleController {
     @Body() dto: { name: string; rank?: string; dept?: string; sortOrder?: number },
   ) {
     const emp = await this.service.createEmployee(dto);
-    await this.producer.enqueueDbToSheet(emp.id); // 시트에 새 행 추가
+    const { activeMonth } = await this.service.config();
+    await this.producer.enqueueDbToSheet(emp.id, activeMonth); // 활성월 탭에 새 행
     return emp;
   }
 
@@ -120,7 +123,8 @@ export class ScheduleController {
     @Body() dto: Partial<{ name: string; rank: string; dept: string; sortOrder: number }>,
   ) {
     const emp = await this.service.updateEmployee(id, dto);
-    await this.producer.enqueueDbToSheet(id);
+    const { activeMonth } = await this.service.config();
+    await this.producer.enqueueDbToSheet(id, activeMonth);
     return emp;
   }
 
@@ -135,17 +139,20 @@ export class ScheduleController {
     @Body() dto: { employeeId: string; date: string; code: string },
   ) {
     const totals = await this.service.setCell(dto.employeeId, dto.date, dto.code, 'service');
-    await this.producer.enqueueDbToSheet(dto.employeeId); // 웹→시트 반영
+    const month = dto.date.slice(0, 7); // 날짜의 월 탭에 반영
+    await this.producer.enqueueDbToSheet(dto.employeeId, month);
     return { ok: true, employeeId: dto.employeeId, totals };
   }
 
-  // ── 재동기화 (시트 주도 삭제까지 반영) ─────────────────────────────────
+  // ── 재동기화 (해당 월 탭 기준) ─────────────────────────────────────────
+  // 직원은 전역이라 삭제하지 않는다. 이 달 탭에서 빠진 직원의 "이 달 배정"만 정리.
   @Post('reconcile')
-  async reconcile() {
+  async reconcile(@Query('month') monthQ?: string) {
     const cfg = await this.service.config();
-    const month = cfg.activeMonth;
+    const month = monthQ || cfg.activeMonth;
+    const tab = gridTab(month);
     const dayCount = daysInMonth(month);
-    const rows = await this.client.readGrid(dayCount);
+    const rows = await this.client.readGrid(tab, dayCount);
     const { tMap, bucketKeys } = await loadAggContext(this.prisma);
 
     const seen: string[] = [];
@@ -162,18 +169,73 @@ export class ScheduleController {
             data: { name: row.name, rank: row.rank || null, source: 'sheet', syncStatus: 'synced' },
           });
 
-      if (!row.empId) await this.writer.writeId(row.rowIndex, emp.id);
+      if (!row.empId) await this.writer.writeId(tab, row.rowIndex, emp.id);
       await replaceMonthAssignments(this.prisma, emp.id, month, row.codes, 'sheet');
 
       const totals = orderedTotals(row.codes, tMap, bucketKeys);
-      await this.writer.pushTotals(row.rowIndex, dayCount, totals);
+      await this.writer.pushTotals(tab, row.rowIndex, dayCount, totals);
       seen.push(emp.id);
     }
 
-    const deleted = await this.prisma.employee.deleteMany({
-      where: seen.length ? { id: { notIn: seen } } : {},
+    // 탭에서 빠진 직원의 이 달 배정만 삭제 (직원 자체는 보존 — 다른 달에 있을 수 있음)
+    const { gte, lt } = monthRange(month);
+    const cleared = seen.length
+      ? await this.prisma.assignment.deleteMany({
+          where: { date: { gte, lt }, employeeId: { notIn: seen } },
+        })
+      : { count: 0 };
+
+    return { month, reconciled: seen.length, clearedAssignments: cleared.count };
+  }
+
+  // ── 다음 달 준비 (월별 탭 자동 생성 + 명부 채우고 활성월 전환) ──────────
+  @Post('months/roll')
+  async rollMonth(@Body() dto: { month?: string } = {}) {
+    const cfg = await this.service.config();
+    const to = dto.month || nextMonth(cfg.activeMonth);
+    if (!isValidMonth(to)) throw new BadRequestException('month must be YYYY-MM');
+
+    const tab = gridTab(to);
+    const existed = await this.client.ensureTab(tab); // 없으면 생성
+
+    const [employees, buckets] = await Promise.all([
+      this.service.listEmployees(),
+      this.service.buckets(),
+    ]);
+    const days = monthDays(to);
+
+    const header = [
+      'empId',
+      '성명',
+      '직급',
+      ...days.map((d) => d.day),
+      ...buckets.map((b) => b.label),
+    ];
+    const blankDays = days.map(() => '');
+    const blankTotals = buckets.map(() => '');
+    const rows = employees.map((e) => [
+      e.id,
+      e.name,
+      e.rank || '',
+      ...blankDays,
+      ...blankTotals,
+    ]);
+
+    // A1=월(텍스트, RAW 라 날짜 변환 안 됨), 2행 헤더, 3행~ 명부(코드/합계 공란)
+    await this.client.writeRange(tab, 'A1', [[to]]);
+    await this.client.writeRange(tab, 'A2', [header, ...rows]);
+
+    await this.prisma.scheduleConfig.update({
+      where: { id: 1 },
+      data: { activeMonth: to },
     });
 
-    return { reconciled: seen.length, deleted: deleted.count };
+    return {
+      from: cfg.activeMonth,
+      to,
+      tab,
+      created: !existed,
+      employees: employees.length,
+    };
   }
 }

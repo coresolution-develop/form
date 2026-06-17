@@ -7,7 +7,6 @@ import {
   DATA_START_ROW,
   DAY_START_COL,
   MONTH_CELL,
-  SHEET_TAB,
   SETTINGS_TAB,
   SET_BUCKET_START_COL,
   SET_DATA_START_ROW,
@@ -30,33 +29,59 @@ export class SheetClientService implements OnModuleInit {
     this.sheets = google.sheets({ version: 'v4', auth });
   }
 
-  /** A1 의 활성 월("YYYY-MM") 읽기 */
-  async readMonth(): Promise<string | null> {
+  /** 탭 존재 여부 확인 후 없으면 생성 (월 롤 시 새 탭). */
+  async ensureTab(title: string): Promise<boolean> {
+    const meta = await this.sheets.spreadsheets.get({
+      spreadsheetId: this.spreadsheetId,
+      fields: 'sheets.properties.title',
+    });
+    const exists = (meta.data.sheets ?? []).some(
+      (s) => s.properties?.title === title,
+    );
+    if (!exists) {
+      await this.sheets.spreadsheets.batchUpdate({
+        spreadsheetId: this.spreadsheetId,
+        requestBody: { requests: [{ addSheet: { properties: { title } } }] },
+      });
+    }
+    return exists; // true면 이미 있던 탭
+  }
+
+  async tabExists(title: string): Promise<boolean> {
+    const meta = await this.sheets.spreadsheets.get({
+      spreadsheetId: this.spreadsheetId,
+      fields: 'sheets.properties.title',
+    });
+    return (meta.data.sheets ?? []).some((s) => s.properties?.title === title);
+  }
+
+  /** 탭 A1 의 월("YYYY-MM") 읽기 */
+  async readMonth(tab: string): Promise<string | null> {
     const res = await this.sheets.spreadsheets.values.get({
       spreadsheetId: this.spreadsheetId,
-      range: `${SHEET_TAB}!${MONTH_CELL}`,
+      range: `${tab}!${MONTH_CELL}`,
     });
     const v = res.data.values?.[0]?.[0];
     return v ? String(v).trim() : null;
   }
 
   /** empId로 직원 행 번호 찾기 (A열 스캔) — 행 삽입/삭제로 밀려도 안전 */
-  async findEmployeeRowById(empId: string): Promise<number | null> {
+  async findEmployeeRowById(tab: string, empId: string): Promise<number | null> {
     const res = await this.sheets.spreadsheets.values.get({
       spreadsheetId: this.spreadsheetId,
-      range: `${SHEET_TAB}!${colLetter(COL_ID)}${DATA_START_ROW}:${colLetter(COL_ID)}`,
+      range: `${tab}!${colLetter(COL_ID)}${DATA_START_ROW}:${colLetter(COL_ID)}`,
     });
     const ids = res.data.values ?? [];
     const idx = ids.findIndex((r) => String(r[0] ?? '') === empId);
     return idx === -1 ? null : idx + DATA_START_ROW;
   }
 
-  /** 그리드 전체 읽기 (재동기화/삭제보정용). dayCount = 활성월 일수. */
-  async readGrid(dayCount: number): Promise<SheetEmployeeRow[]> {
+  /** 그리드 전체 읽기 (재동기화/삭제보정용). dayCount = 그 달 일수. */
+  async readGrid(tab: string, dayCount: number): Promise<SheetEmployeeRow[]> {
     const lastCol = colLetter(dayCol(dayCount));
     const res = await this.sheets.spreadsheets.values.get({
       spreadsheetId: this.spreadsheetId,
-      range: `${SHEET_TAB}!${colLetter(COL_ID)}${DATA_START_ROW}:${lastCol}`,
+      range: `${tab}!${colLetter(COL_ID)}${DATA_START_ROW}:${lastCol}`,
     });
     const rows = res.data.values ?? [];
     return rows.map((row, i) => {
@@ -74,20 +99,20 @@ export class SheetClientService implements OnModuleInit {
     });
   }
 
-  async writeRange(rangeA1: string, values: any[][]) {
+  async writeRange(tab: string, rangeA1: string, values: any[][]) {
     await this.sheets.spreadsheets.values.update({
       spreadsheetId: this.spreadsheetId,
-      range: `${SHEET_TAB}!${rangeA1}`,
+      range: `${tab}!${rangeA1}`,
       valueInputOption: 'RAW',
       requestBody: { values },
     });
   }
 
   /** 시트 끝에 새 직원 행 추가. API 쓰기라 onEdit 안 터짐. */
-  async appendRow(values: any[]) {
+  async appendRow(tab: string, values: any[]) {
     await this.sheets.spreadsheets.values.append({
       spreadsheetId: this.spreadsheetId,
-      range: `${SHEET_TAB}!${colLetter(COL_ID)}${DATA_START_ROW}`,
+      range: `${tab}!${colLetter(COL_ID)}${DATA_START_ROW}`,
       valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       requestBody: { values: [values] },

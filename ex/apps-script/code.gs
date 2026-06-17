@@ -11,8 +11,9 @@
  */
 const WEBHOOK_BASE = 'https://form.sosyge.net/ex/sync'; // 운영 주소
 const SECRET = 'PUT_THE_SAME_SECRET_AS_ENV'; // .env 의 SHEET_WEBHOOK_SECRET 와 동일 값
-const TAB_NAME = '근무표'; // 그리드 탭
+const GRID_PREFIX = '근무표'; // 월별 그리드 탭 접두사 (근무표-YYYY-MM)
 const SETTINGS_TAB = '설정'; // 근무형태 세팅 탭
+const GRID_TAB_RE = /^근무표-\d{4}-\d{2}$/; // 근무표-YYYY-MM 매칭
 
 const MONTH_CELL = 'A1';
 const DATA_START_ROW = 3;
@@ -45,7 +46,7 @@ function onEditInstallable(e) {
     return;
   }
 
-  if (name !== TAB_NAME) return;
+  if (!GRID_TAB_RE.test(name)) return; // 근무표-YYYY-MM 탭만 처리
 
   const month = String(sheet.getRange(MONTH_CELL).getValue() || '').trim();
   if (!/^\d{4}-\d{2}$/.test(month)) return; // 월 앵커 없으면 무시

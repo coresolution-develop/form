@@ -1,15 +1,17 @@
-export const SHEET_TAB = process.env.SHEET_TAB ?? '근무표';
-
 /**
- * 근무표 그리드 시트 계약 (재구성된 깔끔한 구조).
+ * 근무표 그리드 시트 계약 — 월별 탭(원본 방식).
  *
- *   A1            = 활성 월 "YYYY-MM" (앵커)
+ *   탭 이름       = `근무표-YYYY-MM` (월마다 한 탭, 과거 탭은 아카이브로 보존)
+ *   A1            = 그 탭의 월 "YYYY-MM" (앵커)
  *   2행(헤더)     = A:empId | B:성명 | C:직급 | D..:날짜(1..N) | 그 뒤:합계열(M HD / Y)
  *   3행~          = 직원 1명 = 1행
  *
  * 소유: 운영팀 = 성명/직급/날짜셀,  서비스 = empId(A) + 합계열.
  * 단, 웹에서 만든 변경은 서비스가 날짜셀도 API로 되써준다(API 쓰기는 onEdit 미발생 → 루프 없음).
  */
+export const GRID_TAB_PREFIX = process.env.SHEET_TAB ?? '근무표';
+/** 월 → 탭 이름 (예: 2026-07 → 근무표-2026-07) */
+export const gridTab = (month: string) => `${GRID_TAB_PREFIX}-${month}`;
 export const MONTH_CELL = 'A1';
 export const HEADER_ROW = 2;
 export const DATA_START_ROW = 3;

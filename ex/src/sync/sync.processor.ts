@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SheetWriterService } from '../sheets/sheet-writer.service';
 import { SheetClientService } from '../sheets/sheet-client.service';
 import { SheetEmployeeRow } from '../sheets/sheets.types';
+import { gridTab } from '../sheets/sheets.constants';
 import { daysInMonth } from '../schedule/dates';
 import {
   codesForMonth,
@@ -34,7 +35,7 @@ export class SyncProcessor extends WorkerHost {
         await this.handleSheetToDb(job.data as { month: string; row: SheetEmployeeRow });
         break;
       case 'db-to-sheet':
-        await this.handleDbToSheet(job.data as { employeeId: string });
+        await this.handleDbToSheet(job.data as { employeeId: string; month: string });
         break;
       case 'settings-to-sheet':
         await this.handleSettingsToSheet();
@@ -131,21 +132,24 @@ export class SyncProcessor extends WorkerHost {
     const { tMap, bucketKeys } = await loadAggContext(this.prisma);
     const totals = orderedTotals(codes, tMap, bucketKeys);
 
-    if (isNew) await this.writer.writeId(row.rowIndex, emp.id);
+    const tab = gridTab(month);
+    if (isNew) await this.writer.writeId(tab, row.rowIndex, emp.id);
     const rowIndex = isNew
       ? row.rowIndex
-      : (await this.client.findEmployeeRowById(emp.id)) ?? row.rowIndex;
-    await this.writer.pushTotals(rowIndex, dayCount, totals);
+      : (await this.client.findEmployeeRowById(tab, emp.id)) ?? row.rowIndex;
+    await this.writer.pushTotals(tab, rowIndex, dayCount, totals);
   }
 
-  /** DB → 시트 (웹 편집 반영: 날짜셀 + 합계) */
-  private async handleDbToSheet({ employeeId }: { employeeId: string }) {
-    const cfg = await this.prisma.scheduleConfig.upsert({
-      where: { id: 1 },
-      create: { id: 1 },
-      update: {},
-    });
-    const month = cfg.activeMonth;
+  /** DB → 시트 (웹 편집 반영: 날짜셀 + 합계). 해당 월 탭이 없으면 스킵. */
+  private async handleDbToSheet({
+    employeeId,
+    month,
+  }: {
+    employeeId: string;
+    month: string;
+  }) {
+    const tab = gridTab(month);
+    if (!(await this.client.tabExists(tab))) return; // 그 달 탭이 아직 없으면 건너뜀
     const { gte, lt } = monthRange(month);
 
     const emp = await this.prisma.employee.findUnique({
@@ -158,7 +162,7 @@ export class SyncProcessor extends WorkerHost {
     const { tMap, bucketKeys } = await loadAggContext(this.prisma);
     const totals = orderedTotals(codes, tMap, bucketKeys);
 
-    await this.writer.upsertRow({
+    await this.writer.upsertRow(tab, {
       empId: emp.id,
       name: emp.name,
       rank: emp.rank || '',
