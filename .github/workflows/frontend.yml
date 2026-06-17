@@ -17,7 +17,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  # 빌드·검증은 GitHub 호스티드 러너에서 (서버 부하 없음)
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,79 +27,79 @@ jobs:
           node-version: '20'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-
       - name: Install
         working-directory: frontend
         run: npm ci
-
       - name: Lint & typecheck
         working-directory: frontend
         run: |
           npm run lint
           npm run typecheck
-
-      - name: Resolve target
+      - name: Resolve build vars
         id: tgt
         run: |
           if [ "${{ github.ref }}" = "refs/heads/develop" ]; then
             echo "api_url=https://api-form-dev.sosyge.net" >> "$GITHUB_OUTPUT"
             echo "env_name=development"                    >> "$GITHUB_OUTPUT"
-            echo "service=formflow-frontend-dev"           >> "$GITHUB_OUTPUT"
-            echo "app_dir=/opt/formflow-frontend-dev"      >> "$GITHUB_OUTPUT"
-            echo "staging=/tmp/formflow-frontend-dev"      >> "$GITHUB_OUTPUT"
-            echo "health=http://localhost:3002/"           >> "$GITHUB_OUTPUT"
           else
             echo "api_url=https://form-api.sosyge.net"     >> "$GITHUB_OUTPUT"
             echo "env_name=production"                     >> "$GITHUB_OUTPUT"
-            echo "service=formflow-frontend"               >> "$GITHUB_OUTPUT"
-            echo "app_dir=/opt/formflow-frontend"          >> "$GITHUB_OUTPUT"
-            echo "staging=/tmp/formflow-frontend"          >> "$GITHUB_OUTPUT"
-            echo "health=http://localhost:3001/"           >> "$GITHUB_OUTPUT"
           fi
-
       - name: Build
         working-directory: frontend
         env:
-          # 도메인은 브랜치로 결정, 키 값(reCAPTCHA/Sentry)은 레포 Variables 에서 주입
           NEXT_PUBLIC_API_URL: ${{ steps.tgt.outputs.api_url }}
           NEXT_PUBLIC_ENV: ${{ steps.tgt.outputs.env_name }}
           NEXT_PUBLIC_RECAPTCHA_SITE_KEY: ${{ vars.NEXT_PUBLIC_RECAPTCHA_SITE_KEY }}
           NEXT_PUBLIC_RECAPTCHA_ENABLED: ${{ vars.NEXT_PUBLIC_RECAPTCHA_ENABLED }}
           NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
         run: npm run build
-
-      # 이하 배포 단계는 main/develop push 에서만 실행 (PR 은 검증까지만)
       - name: Pack build artifact
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
         working-directory: frontend
         run: |
           tar -czf fe-bundle.tar.gz .next package.json package-lock.json next.config.mjs $([ -d public ] && echo public)
           cp deploy/deploy-frontend.sh ./deploy-frontend.sh
-
-      - name: Copy to server
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-        uses: appleboy/scp-action@v0.1.7
+      - uses: actions/upload-artifact@v4
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_KEY }}
-          source: 'frontend/fe-bundle.tar.gz,frontend/deploy-frontend.sh'
-          target: ${{ steps.tgt.outputs.staging }}
-          strip_components: 1
+          name: frontend-bundle
+          path: |
+            frontend/fe-bundle.tar.gz
+            frontend/deploy-frontend.sh
+          retention-days: 1
 
-      - name: Run remote deploy
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-        uses: appleboy/ssh-action@v1.0.3
+  # 배포는 서버에 설치된 self-hosted 러너에서 (SSH/방화벽 불필요)
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    runs-on: [self-hosted, linux]
+    steps:
+      - uses: actions/download-artifact@v4
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_KEY }}
-          script: |
-            cd ${{ steps.tgt.outputs.staging }}
-            tar -xzf fe-bundle.tar.gz
-            chmod +x deploy-frontend.sh
-            SERVICE=${{ steps.tgt.outputs.service }} \
-            APP_DIR=${{ steps.tgt.outputs.app_dir }} \
-            STAGING_DIR=${{ steps.tgt.outputs.staging }} \
-            HEALTH_URL=${{ steps.tgt.outputs.health }} \
-            bash deploy-frontend.sh
+          name: frontend-bundle
+          path: bundle
+      - name: Resolve deploy target
+        id: tgt
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/develop" ]; then
+            echo "service=formflow-frontend-dev"      >> "$GITHUB_OUTPUT"
+            echo "app_dir=/opt/formflow-frontend-dev" >> "$GITHUB_OUTPUT"
+            echo "staging=/tmp/formflow-frontend-dev" >> "$GITHUB_OUTPUT"
+            echo "health=http://localhost:3002/"      >> "$GITHUB_OUTPUT"
+          else
+            echo "service=formflow-frontend"      >> "$GITHUB_OUTPUT"
+            echo "app_dir=/opt/formflow-frontend" >> "$GITHUB_OUTPUT"
+            echo "staging=/tmp/formflow-frontend" >> "$GITHUB_OUTPUT"
+            echo "health=http://localhost:3001/"  >> "$GITHUB_OUTPUT"
+          fi
+      - name: Deploy
+        run: |
+          mkdir -p "${{ steps.tgt.outputs.staging }}"
+          cp bundle/fe-bundle.tar.gz bundle/deploy-frontend.sh "${{ steps.tgt.outputs.staging }}/"
+          cd "${{ steps.tgt.outputs.staging }}"
+          tar -xzf fe-bundle.tar.gz
+          chmod +x deploy-frontend.sh
+          SERVICE=${{ steps.tgt.outputs.service }} \
+          APP_DIR=${{ steps.tgt.outputs.app_dir }} \
+          STAGING_DIR=${{ steps.tgt.outputs.staging }} \
+          HEALTH_URL=${{ steps.tgt.outputs.health }} \
+          bash deploy-frontend.sh
