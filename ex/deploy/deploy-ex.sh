@@ -12,7 +12,7 @@ fi
 APP_DIR="${APP_DIR:-/opt/formflow-ex}"
 SERVICE="${SERVICE:-formflow-ex}"
 STAGING_DIR="${STAGING_DIR:-/tmp/formflow-ex}"
-HEALTH_URL="${HEALTH_URL:-http://localhost:9100/products}"
+HEALTH_URL="${HEALTH_URL:-http://localhost:9100/schedule/buckets}"
 
 [ -d "$STAGING_DIR/dist" ] || { echo "[deploy-ex] ERROR: $STAGING_DIR/dist 없음"; exit 1; }
 
