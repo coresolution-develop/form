@@ -3,8 +3,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { SyncController } from './sync.controller';
 import { TestController } from './test.controller';
 import { SyncProducer } from './sync.producer';
-import { SheetToDbProcessor } from './sheet-to-db.processor';
-import { DbToSheetProcessor } from './db-to-sheet.processor';
+import { SyncProcessor } from './sync.processor';
 import { PrismaModule } from '../prisma/prisma.module';
 import { SheetsModule } from '../sheets/sheets.module';
 
@@ -15,7 +14,7 @@ import { SheetsModule } from '../sheets/sheets.module';
     BullModule.registerQueue({ name: 'sheet-sync' }),
   ],
   controllers: [SyncController, TestController],
-  providers: [SyncProducer, SheetToDbProcessor, DbToSheetProcessor],
+  providers: [SyncProducer, SyncProcessor],
   exports: [SyncProducer],
 })
 export class SyncModule {}
