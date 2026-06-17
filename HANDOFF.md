@@ -55,6 +55,15 @@
   - 시트: 동기화 실험 스프레드시트(`SHEET_ID=132V…Oq5hg`)에 **`근무표` 탭** 추가, `A1=2026-06`(텍스트), 2행 헤더(`empId|성명|직급|1..30|M HD / Y`), 3행~ 16명. reconcile 로 16명 임포트 + empId/합계 회신.
   - 서버 `.env` `SHEET_TAB=근무표` 로 변경(이전 `시트1` 이라 reconcile 가 엉뚱한 탭 읽던 것 수정). Apps Script `SECRET` = `.env` 의 `SHEET_WEBHOOK_SECRET`, installable onEdit 등록.
   - **검증**: 16명 합계 시트 일치, 시트→웹/웹→시트 양방향 라이브 확인.
+- **근무형태 세팅 편집 UI + 양방향 동기화 (2026-06-18 추가)**:
+  - 세팅 탭에서 코드 추가/라벨·색(프리셋)·버킷별 가중치 편집/삭제. 그리드 색·합계 즉시 반영.
+  - 시트에 **`설정` 탭** 신설(양방향): `code|label|bg|fg|<버킷 가중치>`. 색은 hex 텍스트라 values API로 왕복. push/pull 버튼 + onEdit(`설정` 탭) 지원. **라이브 양방향 검증 완료.**
+  - 삭제는 `?code=` query(코드에 `/` 있음). 설정 동기 잡은 **고정 jobId 미사용**.
+- **운영 함정(겪고 해결한 것)**:
+  - 헬스체크 URL 구 `/products` → `/schedule/buckets`.
+  - 서버 `.env` `SHEET_TAB` 이 구 `시트1` 이면 reconcile 가 엉뚱한 탭을 읽음 → `근무표` 로.
+  - BullMQ **고정 jobId + removeOnFail 유지** 조합은 실패 잡이 같은 id 재추가를 막아 영구 정지 → 설정 잡은 auto-id.
+  - 시트 `A1` 월은 **텍스트**(`'2026-06`)여야 함(날짜 자동변환 방지).
 - **다음 달 운영**: 시트 `A1` 을 다음 달(YYYY-MM)로, DB `ScheduleConfig.activeMonth` 도 맞추고(또는 `PATCH /schedule/config`) 그리드 비우고 새로 입력 → reconcile. (월별 탭 분리 정책은 추후 결정)
 
 ### 2-1. 확정된 결정
