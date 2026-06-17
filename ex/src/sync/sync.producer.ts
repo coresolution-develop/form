@@ -33,21 +33,25 @@ export class SyncProducer {
     );
   }
 
-  /** 설정 DB→시트: 설정 탭 전체 재기록 (단일 작업으로 합쳐짐) */
+  /**
+   * 설정 DB→시트: 설정 탭 전체 재기록.
+   * 고정 jobId 를 쓰지 않는다 — 실패한 잡이 retain 되면 같은 jobId 재추가가
+   * BullMQ에서 무시돼 영영 안 돌기 때문(전체 재기록이라 합쳐질 필요도 없음).
+   */
   async enqueueSettingsToSheet() {
     await this.queue.add(
       'settings-to-sheet',
       {},
-      { jobId: 'settings-to-sheet', removeOnComplete: true, removeOnFail: 100 },
+      { removeOnComplete: true, removeOnFail: true },
     );
   }
 
-  /** 설정 시트→DB: 설정 탭 전체 재읽기 (단일 작업으로 합쳐짐) */
+  /** 설정 시트→DB: 설정 탭 전체 재읽기 */
   async enqueueSheetToSettings() {
     await this.queue.add(
       'sheet-to-settings',
       {},
-      { jobId: 'sheet-to-settings', removeOnComplete: true, removeOnFail: 100 },
+      { removeOnComplete: true, removeOnFail: true },
     );
   }
 }
