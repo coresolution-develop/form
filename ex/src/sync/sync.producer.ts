@@ -10,7 +10,7 @@ export class SyncProducer {
   /** 시트→DB: 행 id(없으면 rowIndex)로 직렬화 */
   async enqueueSheetToDb(row: SheetRowPayload) {
     await this.queue.add('sheet-to-db', row, {
-      jobId: `sheet:${row.id || 'new:' + row.rowIndex}`,
+      jobId: `sheet-${row.id || 'new-' + row.rowIndex}`,
       removeOnComplete: true,
       removeOnFail: 100,
     });
@@ -22,7 +22,7 @@ export class SyncProducer {
       'db-to-sheet',
       { id },
       {
-        jobId: `db:${id}`,
+        jobId: `db-${id}`,
         removeOnComplete: true,
         removeOnFail: 100,
       },
