@@ -9,7 +9,7 @@
 
 - **운영 배포(prod/dev)** 완료 — `form.sosyge.net` 자가 호스팅 러너 CI/CD로 돌아감.
 - **ex/ Sheets Sync 실험** 완료 — 구글시트 ↔ MySQL ↔ 웹 3-way 동기화가 `form.sosyge.net/ex/`에서 동작 중.
-- **✅ ex/ 를 "근무표(월간 그리드)"로 전환 — 1차 구현 완료(미배포).** 실제 시트(코어솔루션 2026-06) CSV로 집계 규칙을 역설계해 **16명 전원 합계 일치 검증**, 스키마·집계엔진·시드·백엔드 API·셀단위 동기화·웹 UI·Apps Script 까지 교체. `nest build` 통과. **남은 일: MySQL에 migration 적용 → 실 시트 그리드 재구성 → end-to-end 검증 → push(자동배포).**
+- **✅ ex/ 를 "근무표(월간 그리드)"로 전환 — 운영 배포 + end-to-end 검증 완료 (2026-06-17).** 실제 시트(코어솔루션 2026-06) CSV로 집계 규칙을 역설계해 **16명 전원 합계 일치 검증**, 스키마·집계엔진·시드·백엔드 API·셀단위 동기화·웹 UI·Apps Script 까지 교체 후 `main` push → 자동배포. `form.sosyge.net/ex/` 에서 **16명·합계가 시트와 일치, 시트↔웹 양방향 동기화 라이브 동작 확인**.
 
 ---
 
@@ -49,8 +49,13 @@
   - 백엔드: `src/schedule/*` (그리드 API·집계엔진·시드·날짜헬퍼), `src/sheets/*`·`src/sync/*` 를 **셀/그리드 단위로 일반화**
   - UI: `public/index.html` = 월간 그리드 + 근무형태 세팅 + 직원 관리 (실시간 합계)
   - `apps-script/code.gs` = 그리드 onEdit → 직원 행 payload
-- **빌드**: `npm run build` 클린.
-- **남은 일(이어받는 사람)**: ① `prisma migrate deploy` 로 DB 적용(주의: 기존 `Product` 테이블 DROP) ② 구글시트를 §2-0 "시트 계약"(README) 구조로 재구성 ③ Apps Script `SECRET`/`WEBHOOK_URL` 세팅 ④ end-to-end 검증 후 `ex/**` push → 자동배포.
+- **빌드/배포**: `npm run build` 클린 → `main` push 로 자동배포 완료. 헬스체크 URL은 `/schedule/buckets` 로 교체(구 `/products` 가 없어져 실패하던 것 수정).
+- **운영 셋업 완료**:
+  - migration 적용됨(`Product` DROP, 새 5테이블). 부팅 시드 = **4 buckets / 25 shift types**.
+  - 시트: 동기화 실험 스프레드시트(`SHEET_ID=132V…Oq5hg`)에 **`근무표` 탭** 추가, `A1=2026-06`(텍스트), 2행 헤더(`empId|성명|직급|1..30|M HD / Y`), 3행~ 16명. reconcile 로 16명 임포트 + empId/합계 회신.
+  - 서버 `.env` `SHEET_TAB=근무표` 로 변경(이전 `시트1` 이라 reconcile 가 엉뚱한 탭 읽던 것 수정). Apps Script `SECRET` = `.env` 의 `SHEET_WEBHOOK_SECRET`, installable onEdit 등록.
+  - **검증**: 16명 합계 시트 일치, 시트→웹/웹→시트 양방향 라이브 확인.
+- **다음 달 운영**: 시트 `A1` 을 다음 달(YYYY-MM)로, DB `ScheduleConfig.activeMonth` 도 맞추고(또는 `PATCH /schedule/config`) 그리드 비우고 새로 입력 → reconcile. (월별 탭 분리 정책은 추후 결정)
 
 ### 2-1. 확정된 결정
 - **형태**: 월간 그리드 — **직원(행) × 날짜(열)**, 각 칸에 시프트.
