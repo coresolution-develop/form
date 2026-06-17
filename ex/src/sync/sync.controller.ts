@@ -7,7 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { SyncProducer } from './sync.producer';
-import { SheetRowPayload } from '../sheets/sheets.types';
+import { SheetWebhookBody } from '../sheets/sheets.types';
 
 @Controller('sync')
 export class SyncController {
@@ -18,15 +18,17 @@ export class SyncController {
   @Post('sheet-webhook')
   async fromSheet(
     @Headers('x-webhook-secret') secret: string,
-    @Body() body: { rows: SheetRowPayload[] },
+    @Body() body: SheetWebhookBody,
   ) {
-    this.logger.log(`webhook received: ${body.rows?.length ?? 0} row(s)`);
+    this.logger.log(
+      `webhook received: month=${body.month} ${body.rows?.length ?? 0} row(s)`,
+    );
     if (secret !== process.env.SHEET_WEBHOOK_SECRET) {
       this.logger.warn('webhook rejected: bad secret');
       throw new UnauthorizedException();
     }
     for (const row of body.rows ?? []) {
-      await this.producer.enqueueSheetToDb(row);
+      await this.producer.enqueueSheetToDb(body.month, row);
     }
     return { ok: true, count: body.rows?.length ?? 0 };
   }

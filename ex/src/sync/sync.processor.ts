@@ -2,17 +2,28 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
 import { SheetWriterService } from '../sheets/sheet-writer.service';
-import { SheetRowPayload } from '../sheets/sheets.types';
+import { SheetClientService } from '../sheets/sheet-client.service';
+import { SheetEmployeeRow } from '../sheets/sheets.types';
+import { daysInMonth } from '../schedule/dates';
+import {
+  codesForMonth,
+  loadAggContext,
+  orderedTotals,
+  replaceMonthAssignments,
+} from '../schedule/grid-ops';
+import { monthRange } from '../schedule/dates';
 
 /**
- * 한 큐('sheet-sync')에 워커는 하나여야 한다(여러 WorkerHost가 같은 큐를 물면 job을 경쟁해서 무시됨).
- * 양방향 잡을 job.name 으로 분기한다.
+ * 한 큐('sheet-sync')에 워커는 하나. 그리드 동기화를 job.name 으로 분기한다.
+ *  - sheet-to-db: 시트의 한 직원 행(날짜셀들) → DB 배정 통째 교체 + 합계 되쓰기
+ *  - db-to-sheet: DB의 한 직원 → 시트 날짜셀+합계 되쓰기 (웹 편집 반영)
  */
 @Processor('sheet-sync')
 export class SyncProcessor extends WorkerHost {
   constructor(
     private prisma: PrismaService,
     private writer: SheetWriterService,
+    private client: SheetClientService,
   ) {
     super();
   }
@@ -20,88 +31,78 @@ export class SyncProcessor extends WorkerHost {
   async process(job: Job): Promise<void> {
     switch (job.name) {
       case 'sheet-to-db':
-        await this.handleSheetToDb(job.data as SheetRowPayload);
+        await this.handleSheetToDb(job.data as { month: string; row: SheetEmployeeRow });
         break;
       case 'db-to-sheet':
-        await this.handleDbToSheet(job.data as { id: string });
+        await this.handleDbToSheet(job.data as { employeeId: string });
         break;
     }
   }
 
   /** 시트 → DB */
-  private async handleSheetToDb(row: SheetRowPayload) {
-    // 1. 검증 (운영팀 오입력 방어)
-    if (!row.name) return;
-    const price = Number(row.price);
-    if (Number.isNaN(price)) {
-      if (row.id) {
-        await this.writer.pushServiceFields(row.id, {
-          syncStatus: 'error: price',
-          computed: 0,
-          updatedAt: new Date().toISOString(),
+  private async handleSheetToDb({
+    month,
+    row,
+  }: {
+    month: string;
+    row: SheetEmployeeRow;
+  }) {
+    if (!row.name) return; // 빈 행 방어
+
+    // 1. 직원 upsert (신규면 DB가 id 발급)
+    const isNew = !row.empId;
+    const emp = isNew
+      ? await this.prisma.employee.create({
+          data: { name: row.name, rank: row.rank || null, source: 'sheet', syncStatus: 'synced' },
+        })
+      : await this.prisma.employee.upsert({
+          where: { id: row.empId },
+          create: { id: row.empId, name: row.name, rank: row.rank || null, source: 'sheet', syncStatus: 'synced' },
+          update: { name: row.name, rank: row.rank || null, source: 'sheet', syncStatus: 'synced' },
         });
-      }
-      return;
-    }
 
-    // 2. 신규행(id 없음) → DB가 id 발급 → 시트 A열에 회신
-    if (!row.id) {
-      const created = await this.prisma.product.create({
-        data: {
-          name: row.name,
-          price,
-          status: row.status || 'active',
-          memo: row.memo,
-          source: 'sheet',
-          syncStatus: 'synced',
-        },
-      });
-      await this.writer.writeId(row.rowIndex, created.id);
-      await this.writer.pushServiceFields(created.id, {
-        syncStatus: 'synced',
-        computed: created.computed,
-        updatedAt: created.updatedAt.toISOString(),
-      });
-      return;
-    }
+    // 2. 날짜셀 → 배정 통째 교체
+    const dayCount = daysInMonth(month);
+    const codes = Array.from({ length: dayCount }, (_, i) => row.codes[i] ?? '');
+    await replaceMonthAssignments(this.prisma, emp.id, month, codes, 'sheet');
 
-    // 3. 기존행 → upsert (시트가 운영팀 컬럼의 source of truth)
-    const saved = await this.prisma.product.upsert({
-      where: { id: row.id },
-      create: {
-        id: row.id,
-        name: row.name,
-        price,
-        status: row.status || 'active',
-        memo: row.memo,
-        source: 'sheet',
-        syncStatus: 'synced',
-      },
-      update: {
-        name: row.name,
-        price,
-        status: row.status || 'active',
-        memo: row.memo,
-        source: 'sheet',
-        syncStatus: 'synced',
-      },
-    });
-    // 서비스 소유 컬럼만 시트에 반영 (운영팀 컬럼은 안 건드림 → 루프 없음)
-    await this.writer.pushServiceFields(saved.id, {
-      syncStatus: 'synced',
-      computed: saved.computed,
-      updatedAt: saved.updatedAt.toISOString(),
-    });
+    // 3. 합계 재계산 → 시트 되쓰기 (서비스 소유 열만 → 루프 없음)
+    const { tMap, bucketKeys } = await loadAggContext(this.prisma);
+    const totals = orderedTotals(codes, tMap, bucketKeys);
+
+    if (isNew) await this.writer.writeId(row.rowIndex, emp.id);
+    const rowIndex = isNew
+      ? row.rowIndex
+      : (await this.client.findEmployeeRowById(emp.id)) ?? row.rowIndex;
+    await this.writer.pushTotals(rowIndex, dayCount, totals);
   }
 
-  /** DB → 시트 (서비스 소유 컬럼 F~H 만) */
-  private async handleDbToSheet({ id }: { id: string }) {
-    const p = await this.prisma.product.findUnique({ where: { id } });
-    if (!p) return;
-    await this.writer.pushServiceFields(p.id, {
-      syncStatus: p.syncStatus,
-      computed: p.computed,
-      updatedAt: p.updatedAt.toISOString(),
+  /** DB → 시트 (웹 편집 반영: 날짜셀 + 합계) */
+  private async handleDbToSheet({ employeeId }: { employeeId: string }) {
+    const cfg = await this.prisma.scheduleConfig.upsert({
+      where: { id: 1 },
+      create: { id: 1 },
+      update: {},
+    });
+    const month = cfg.activeMonth;
+    const { gte, lt } = monthRange(month);
+
+    const emp = await this.prisma.employee.findUnique({
+      where: { id: employeeId },
+      include: { assignments: { where: { date: { gte, lt } } } },
+    });
+    if (!emp) return;
+
+    const codes = codesForMonth(emp.assignments, month);
+    const { tMap, bucketKeys } = await loadAggContext(this.prisma);
+    const totals = orderedTotals(codes, tMap, bucketKeys);
+
+    await this.writer.upsertRow({
+      empId: emp.id,
+      name: emp.name,
+      rank: emp.rank || '',
+      codes,
+      totals,
     });
   }
 }

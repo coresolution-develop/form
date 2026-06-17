@@ -1,59 +1,68 @@
 import { Injectable } from '@nestjs/common';
 import { SheetClientService } from './sheet-client.service';
-import { COL } from './sheets.constants';
+import {
+  COL_ID,
+  DAY_START_COL,
+  colLetter,
+  totalsStartCol,
+} from './sheets.constants';
+
+export interface EmployeeRowOut {
+  empId: string;
+  name: string;
+  rank: string;
+  codes: string[]; // 길이 = dayCount
+  totals: number[]; // 버킷 순서대로
+}
 
 @Injectable()
 export class SheetWriterService {
   constructor(private client: SheetClientService) {}
 
-  /** 신규행: 운영팀이 만든 행에 DB가 발급한 id를 A열에 회신 */
-  async writeId(rowIndex: number, id: string) {
-    await this.client.writeRange(`${COL.id}${rowIndex}`, [[id]]);
+  /** 신규 직원행: 운영팀이 만든 행에 DB가 발급한 empId를 A열에 회신 */
+  async writeId(rowIndex: number, empId: string) {
+    await this.client.writeRange(`${colLetter(COL_ID)}${rowIndex}`, [[empId]]);
   }
 
-  /** 서비스 소유 컬럼(F~H)에만 반영 — 운영팀 컬럼은 절대 건드리지 않음 */
-  async pushServiceFields(
-    id: string,
-    fields: { syncStatus: string; computed: number; updatedAt: string },
-  ) {
-    const rowIndex = await this.client.findRowIndexById(id);
-    if (!rowIndex) return; // 시트에서 행이 사라졌으면 스킵
-    await this.client.writeRange(
-      `${COL.syncStatus}${rowIndex}:${COL.updatedAt}${rowIndex}`,
-      [[fields.syncStatus, fields.computed, fields.updatedAt]],
-    );
-  }
+  /**
+   * 기존 직원행 갱신 (DB→시트). A열 empId + 날짜셀 + 합계열을 되쓴다.
+   * 성명/직급(B,C)은 운영팀 소유라 건드리지 않는다. API 쓰기 → onEdit 미발생.
+   */
+  async pushRow(rowIndex: number, row: EmployeeRowOut) {
+    const dayCount = row.codes.length;
+    await this.client.writeRange(`${colLetter(COL_ID)}${rowIndex}`, [[row.empId]]);
 
-  // ── 웹(서비스) 측 입력 — 실험상 행 전체를 쓴다 ──────────────────────────
-  /** 웹 신규 생성 → 시트 끝에 새 행 추가 (A~H 전체) */
-  async appendNewRow(p: ProductRow) {
-    await this.client.appendRow([
-      p.id, p.name, p.price, p.status, p.memo ?? '',
-      p.syncStatus, p.computed, p.updatedAt.toISOString(),
+    const from = colLetter(DAY_START_COL);
+    const to = colLetter(totalsStartCol(dayCount) + row.totals.length - 1);
+    await this.client.writeRange(`${from}${rowIndex}:${to}${rowIndex}`, [
+      [...row.codes, ...row.totals],
     ]);
   }
 
-  /** 웹 수정 → 시트 행 B~H 갱신 (A=id 유지). 시트에 행이 없으면 추가. */
-  async writeFullRow(p: ProductRow) {
-    const rowIndex = await this.client.findRowIndexById(p.id);
-    if (!rowIndex) {
-      await this.appendNewRow(p);
+  /**
+   * 합계열만 갱신 (시트→DB 동기화 시). 날짜셀은 방금 운영팀이 편집한 값이라 안 건드림.
+   * dayCount = 활성월 일수, totals = 버킷 순서.
+   */
+  async pushTotals(rowIndex: number, dayCount: number, totals: number[]) {
+    if (!totals.length) return;
+    const from = colLetter(totalsStartCol(dayCount));
+    const to = colLetter(totalsStartCol(dayCount) + totals.length - 1);
+    await this.client.writeRange(`${from}${rowIndex}:${to}${rowIndex}`, [totals]);
+  }
+
+  /** empId로 행을 찾아 갱신. 없으면 시트 끝에 새 행 추가. */
+  async upsertRow(row: EmployeeRowOut) {
+    const rowIndex = await this.client.findEmployeeRowById(row.empId);
+    if (rowIndex) {
+      await this.pushRow(rowIndex, row);
       return;
     }
-    await this.client.writeRange(
-      `${COL.name}${rowIndex}:${COL.updatedAt}${rowIndex}`,
-      [[p.name, p.price, p.status, p.memo ?? '', p.syncStatus, p.computed, p.updatedAt.toISOString()]],
-    );
+    await this.client.appendRow([
+      row.empId,
+      row.name,
+      row.rank,
+      ...row.codes,
+      ...row.totals,
+    ]);
   }
-}
-
-interface ProductRow {
-  id: string;
-  name: string;
-  price: number;
-  status: string;
-  memo: string | null;
-  syncStatus: string;
-  computed: number;
-  updatedAt: Date;
 }

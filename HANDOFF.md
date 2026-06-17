@@ -9,7 +9,7 @@
 
 - **운영 배포(prod/dev)** 완료 — `form.sosyge.net` 자가 호스팅 러너 CI/CD로 돌아감.
 - **ex/ Sheets Sync 실험** 완료 — 구글시트 ↔ MySQL ↔ 웹 3-way 동기화가 `form.sosyge.net/ex/`에서 동작 중.
-- **▶ 현재 작업: ex/ 를 "근무표(월간 그리드)"로 발전** — 방향 확정 단계. 시안까지 합의했고, **시프트 종류·기간·부가기능 답변 대기 중**. 아직 코드 변경 전.
+- **✅ ex/ 를 "근무표(월간 그리드)"로 전환 — 1차 구현 완료(미배포).** 실제 시트(코어솔루션 2026-06) CSV로 집계 규칙을 역설계해 **16명 전원 합계 일치 검증**, 스키마·집계엔진·시드·백엔드 API·셀단위 동기화·웹 UI·Apps Script 까지 교체. `nest build` 통과. **남은 일: MySQL에 migration 적용 → 실 시트 그리드 재구성 → end-to-end 검증 → push(자동배포).**
 
 ---
 
@@ -39,7 +39,18 @@
 
 ---
 
-## 2. ▶ 현재 작업: ex/ → 근무표(월간 그리드)
+## 2. ✅ 완료: ex/ → 근무표(월간 그리드) 1차 구현
+
+### 2-0. 구현 결과 (2026-06-17)
+- **집계 규칙 역설계 + 검증**: 실제 시트 CSV로 코드별 `(버킷, 가중치)` 매핑을 풀어 **16명 전원 M///Y 합계가 1의 오차 없이 일치**. 출하 코드(`computeTotals` + `seed.data.ts`)로 재검증 통과.
+  - 핵심: 한 코드가 여러 버킷에 쪼개짐 — 오후반차 `M/` → 근무 0.5 + 연차 0.5. 초과마커 `M5/M7/M9/MO`·`DY`·`H` 는 0 기여. 시트의 숨은 헬퍼열 `AQ~AX` 를 그대로 대체.
+- **교체 완료 파일**:
+  - 스키마: `Product` → `Employee`/`Assignment`/`ShiftType`/`AggregateBucket`/`ScheduleConfig` (+ migration `20260617130000_workschedule`)
+  - 백엔드: `src/schedule/*` (그리드 API·집계엔진·시드·날짜헬퍼), `src/sheets/*`·`src/sync/*` 를 **셀/그리드 단위로 일반화**
+  - UI: `public/index.html` = 월간 그리드 + 근무형태 세팅 + 직원 관리 (실시간 합계)
+  - `apps-script/code.gs` = 그리드 onEdit → 직원 행 payload
+- **빌드**: `npm run build` 클린.
+- **남은 일(이어받는 사람)**: ① `prisma migrate deploy` 로 DB 적용(주의: 기존 `Product` 테이블 DROP) ② 구글시트를 §2-0 "시트 계약"(README) 구조로 재구성 ③ Apps Script `SECRET`/`WEBHOOK_URL` 세팅 ④ end-to-end 검증 후 `ex/**` push → 자동배포.
 
 ### 2-1. 확정된 결정
 - **형태**: 월간 그리드 — **직원(행) × 날짜(열)**, 각 칸에 시프트.

@@ -3,95 +3,306 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sheets Sync — Products</title>
+<title>근무표</title>
 <style>
-  body { font-family: system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif; max-width: 880px; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }
-  h1 { font-size: 1.4rem; margin-bottom: 4px; }
-  .muted { color: #888; font-size: 13px; margin-top: 0; }
-  .form { display: flex; gap: 8px; margin: 1.2rem 0; }
-  .form input { flex: 1; }
-  input { padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { border-bottom: 1px solid #eee; padding: 8px 6px; text-align: left; font-size: 14px; }
-  th { color: #666; font-weight: 600; font-size: 12px; }
-  td input { width: 100%; }
-  button { padding: 6px 12px; border: 1px solid #378ADD; background: #378ADD; color: #fff; border-radius: 6px; cursor: pointer; font-size: 13px; }
-  button.ghost { background: #fff; color: #378ADD; }
-  .id { font-family: ui-monospace, monospace; font-size: 11px; color: #aaa; }
-  .badge { font-size: 11px; color: #1d9e75; }
+  :root {
+    --bg: #ffffff; --surface: #f7f7f5; --line: #e6e5e0; --line2: #d3d1c7;
+    --text: #2c2c2a; --muted: #6b6a64; --hint: #9a988f;
+    --accent: #185fa5; --weekend: #c0392b; --today: #fff7d6; --total-bg: #fdf7ec; --total-fg: #633806;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+         color: var(--text); background: var(--bg); font-size: 14px; }
+  header { display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .org { font-size: 16px; font-weight: 600; }
+  .count { font-size: 12px; color: var(--muted); background: var(--surface); padding: 2px 8px; border-radius: var(--radius); }
+  nav { display: flex; gap: 4px; margin-left: auto; }
+  nav button { font: inherit; }
+  .tab { padding: 6px 12px; border: 1px solid var(--line); background: var(--bg); border-radius: var(--radius); cursor: pointer; color: var(--muted); }
+  .tab.active { background: var(--text); color: #fff; border-color: var(--text); }
+  main { padding: 18px 20px 60px; }
+  .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .toolbar .month { font-size: 15px; font-weight: 600; min-width: 110px; text-align: center; }
+  button.btn { font: inherit; padding: 6px 12px; border: 1px solid var(--line2); background: var(--bg); border-radius: var(--radius); cursor: pointer; }
+  button.btn:hover { background: var(--surface); }
+  button.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .iconbtn { width: 32px; height: 32px; border: 1px solid var(--line2); background: var(--bg); border-radius: var(--radius); cursor: pointer; font-size: 15px; }
+  .gridwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+  table.grid { border-collapse: collapse; white-space: nowrap; font-size: 12px; }
+  table.grid th, table.grid td { border: 1px solid var(--line); text-align: center; height: 30px; }
+  table.grid thead th { background: var(--surface); font-weight: 600; padding: 3px 0; }
+  .stick { position: sticky; left: 0; z-index: 2; background: var(--bg); }
+  thead .stick { z-index: 3; background: var(--surface); }
+  .empcell { min-width: 120px; text-align: left; padding: 4px 10px; }
+  .empcell .nm { font-weight: 600; } .empcell .rk { color: var(--hint); font-size: 11px; margin-left: 4px; }
+  .daycol { width: 30px; }
+  .wknd { color: var(--weekend); }
+  .today { background: var(--today) !important; }
+  td.cell { cursor: pointer; }
+  td.cell .badge { display: inline-block; min-width: 22px; height: 22px; line-height: 22px; border-radius: 4px; font-weight: 600; padding: 0 3px; }
+  .totcol { width: 38px; background: var(--total-bg); color: var(--total-fg); font-weight: 600; }
+  thead .totcol { background: #f6ead2; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 2px 0; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 2px 8px; border-radius: 20px; border: 1px solid var(--line); }
+  .chip .sw { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--line2); }
+  .hint { color: var(--hint); font-size: 12px; margin: 8px 2px 0; }
+  /* popover */
+  #pop { position: absolute; z-index: 50; background: var(--bg); border: 1px solid var(--line2); border-radius: var(--radius);
+         box-shadow: 0 6px 24px rgba(0,0,0,.14); padding: 8px; display: none; max-width: 280px; }
+  #pop .opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; max-height: 220px; overflow-y: auto; }
+  #pop .opt { cursor: pointer; border: 1px solid var(--line); border-radius: 4px; padding: 4px 2px; text-align: center; font-size: 11px; }
+  #pop .opt b { display: block; font-size: 13px; }
+  #pop .opt:hover { outline: 2px solid var(--accent); }
+  #pop .row { display: flex; gap: 6px; margin-top: 8px; }
+  #pop input { font: inherit; flex: 1; padding: 5px 8px; border: 1px solid var(--line2); border-radius: 6px; min-width: 0; }
+  /* settings tables */
+  table.cfg { border-collapse: collapse; width: 100%; max-width: 860px; font-size: 13px; }
+  table.cfg th, table.cfg td { border-bottom: 1px solid var(--line); padding: 8px 8px; text-align: left; vertical-align: middle; }
+  table.cfg th { color: var(--muted); font-weight: 500; font-size: 12px; }
+  table.cfg input { font: inherit; padding: 4px 6px; border: 1px solid var(--line2); border-radius: 6px; }
+  .mono { font-family: ui-monospace, Menlo, monospace; }
+  .contribs { font-size: 12px; color: var(--muted); }
+  .sw-lg { width: 24px; height: 18px; border-radius: 4px; border: 1px solid var(--line2); display: inline-block; vertical-align: -3px; }
+  .section-h { display: flex; align-items: center; gap: 10px; margin: 4px 0 14px; }
+  .section-h h2 { font-size: 16px; margin: 0; font-weight: 600; }
+  .hidden { display: none; }
 </style>
 </head>
 <body>
-  <h1>Sheets Sync — Products</h1>
-  <p class="muted">웹 ↔ DB ↔ Google Sheets 삼방향 동기화 · 3초마다 자동 새로고침</p>
+<header>
+  <span class="org" id="org">근무표</span>
+  <span class="count" id="count"></span>
+  <nav>
+    <button class="tab active" data-view="grid">근무표</button>
+    <button class="tab" data-view="shift">근무형태 세팅</button>
+    <button class="tab" data-view="emp">직원</button>
+  </nav>
+</header>
 
-  <div class="form">
-    <input id="new-name" placeholder="상품명" />
-    <input id="new-price" type="number" placeholder="가격" style="max-width:160px" />
-    <button onclick="createProduct()">추가</button>
-    <button class="ghost" onclick="reconcile()">시트와 동기화</button>
-  </div>
+<main>
+  <!-- 그리드 -->
+  <section id="view-grid">
+    <div class="toolbar">
+      <button class="iconbtn" id="prev">◀</button>
+      <span class="month" id="month"></span>
+      <button class="iconbtn" id="next">▶</button>
+      <button class="btn primary" id="sync">↻ 시트와 동기화</button>
+      <span class="hint" id="syncmsg"></span>
+    </div>
+    <div class="gridwrap"><table class="grid" id="gridtable"></table></div>
+    <div class="legend" id="legend"></div>
+    <p class="hint">셀을 클릭해 근무형태를 지정 · 우측 합계는 세팅 규칙으로 자동 계산 · 변경은 큐를 통해 시트에 반영됩니다.</p>
+  </section>
 
-  <table>
-    <thead>
-      <tr><th>id</th><th>name</th><th>price</th><th>computed</th><th>status</th><th></th></tr>
-    </thead>
-    <tbody id="rows"></tbody>
-  </table>
+  <!-- 근무형태 세팅 -->
+  <section id="view-shift" class="hidden">
+    <div class="section-h"><h2>근무형태 세팅</h2><span class="hint">코드 → 색 · 집계기여(버킷·가중치). 그리드 색과 합계가 여기서 나옵니다.</span></div>
+    <table class="cfg" id="shifttable"></table>
+  </section>
+
+  <!-- 직원 -->
+  <section id="view-emp" class="hidden">
+    <div class="section-h"><h2>직원</h2>
+      <button class="btn" id="addemp">+ 직원 추가</button>
+    </div>
+    <table class="cfg" id="emptable"></table>
+  </section>
+</main>
+
+<div id="pop"></div>
 
 <script>
-// 상대경로 — 로컬(/)이든 운영(/ex/)이든 현재 위치 기준으로 호출됨
-const API = 'products';
-let hasFocus = false;
+const API = location.pathname.replace(/\/[^/]*$/, '/');
+const TODAY = '2026-06-17';
+const j = (r) => r.ok ? r.json() : r.json().then(e => Promise.reject(e));
+const api = (p, opt) => fetch(API + 'schedule' + p, opt).then(j);
+const send = (p, method, body) => api(p, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
 
-async function load() {
-  const res = await fetch(API);
-  const products = await res.json();
-  document.getElementById('rows').innerHTML = products.map(p => `
-    <tr>
-      <td class="id">${p.id.slice(0, 8)}…</td>
-      <td><input value="${(p.name ?? '').replace(/"/g, '&quot;')}" data-f="name" /></td>
-      <td><input type="number" value="${p.price ?? 0}" data-f="price" style="max-width:120px" /></td>
-      <td><span class="badge">${p.computed}</span></td>
-      <td>${p.status}</td>
-      <td><button class="ghost" onclick="save('${p.id}', this)">저장</button></td>
-    </tr>`).join('');
+let state = { month: null, grid: null, shiftTypes: [], buckets: [] };
+
+// ── 탭 전환 ──────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
+  for (const v of ['grid','shift','emp'])
+    document.getElementById('view-' + v).classList.toggle('hidden', v !== t.dataset.view);
+  if (t.dataset.view === 'shift') renderShiftTypes();
+  if (t.dataset.view === 'emp') renderEmployees();
+});
+
+// ── 월 이동 ──────────────────────────────────────────────
+function shiftMonth(ym, delta) {
+  let [y, m] = ym.split('-').map(Number);
+  m += delta; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; }
+  return y + '-' + String(m).padStart(2, '0');
+}
+document.getElementById('prev').onclick = () => loadGrid(shiftMonth(state.month, -1));
+document.getElementById('next').onclick = () => loadGrid(shiftMonth(state.month, +1));
+document.getElementById('sync').onclick = async () => {
+  const msg = document.getElementById('syncmsg'); msg.textContent = '동기화 중…';
+  try { const r = await send('/reconcile', 'POST'); msg.textContent = `반영 ${r.reconciled}건 · 삭제 ${r.deleted}건`; await loadGrid(state.month); }
+  catch (e) { msg.textContent = '실패: ' + (e.message || e.error || ''); }
+};
+
+// ── 그리드 로드/렌더 ──────────────────────────────────────
+async function loadGrid(month) {
+  const g = await api('/grid' + (month ? '?month=' + month : ''));
+  state.month = g.month; state.grid = g; state.buckets = g.buckets; state.shiftTypes = g.shiftTypes;
+  document.getElementById('org').textContent = g.orgName;
+  document.getElementById('count').textContent = g.employees.length + '명';
+  document.getElementById('month').textContent = g.month.replace('-', '년 ') + '월';
+  renderGrid(); renderLegend();
 }
 
-async function createProduct() {
-  const name = document.getElementById('new-name').value.trim();
-  const price = Number(document.getElementById('new-price').value) || 0;
-  if (!name) return;
-  await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, price }) });
-  document.getElementById('new-name').value = '';
-  document.getElementById('new-price').value = '';
-  load();
+function typeOf(code) { return state.shiftTypes.find(t => t.code === code); }
+function badge(code) {
+  if (!code) return '';
+  const t = typeOf(code);
+  const bg = t && t.bgColor !== 'transparent' ? t.bgColor : 'transparent';
+  const fg = t && t.fgColor ? t.fgColor : 'inherit';
+  const fw = bg === 'transparent' ? '400' : '600';
+  return `<span class="badge" style="background:${bg};color:${fg};font-weight:${fw}">${code}</span>`;
 }
 
-async function reconcile() {
-  const res = await fetch(API + '/reconcile', { method: 'POST' });
-  const r = await res.json();
-  await load();
-  alert(`재동기화 완료 — 시트 기준 ${r.reconciled}개 반영, DB에서 ${r.deleted}개 삭제`);
+function renderGrid() {
+  const g = state.grid, days = g.days, buckets = g.buckets;
+  let h = '<thead><tr>';
+  h += '<th class="stick empcell">직원</th>';
+  for (const d of days) h += `<th class="daycol ${d.weekend ? 'wknd' : ''} ${d.iso === TODAY ? 'today' : ''}">${d.day}</th>`;
+  for (const b of buckets) h += `<th class="totcol">${b.label}</th>`;
+  h += '</tr><tr><th class="stick empcell"></th>';
+  for (const d of days) h += `<th class="daycol ${d.weekend ? 'wknd' : ''} ${d.iso === TODAY ? 'today' : ''}" style="font-weight:400;font-size:11px">${d.dowLabel}</th>`;
+  for (const b of buckets) h += '<th class="totcol"></th>';
+  h += '</tr></thead><tbody>';
+
+  for (const e of g.employees) {
+    h += `<tr data-emp="${e.id}">`;
+    h += `<td class="stick empcell"><span class="nm">${esc(e.name)}</span><span class="rk">${esc(e.rank || '')}</span></td>`;
+    for (const d of days) {
+      const code = e.cells[d.iso] || '';
+      h += `<td class="cell ${d.iso === TODAY ? 'today' : ''}" data-emp="${e.id}" data-date="${d.iso}">${badge(code)}</td>`;
+    }
+    for (const b of buckets) h += `<td class="totcol" data-tot="${b.key}">${fmt(e.totals[b.key])}</td>`;
+    h += '</tr>';
+  }
+  h += '</tbody>';
+  document.getElementById('gridtable').innerHTML = h;
 }
 
-async function save(id, btn) {
-  const tr = btn.closest('tr');
-  const name = tr.querySelector('[data-f=name]').value;
-  const price = Number(tr.querySelector('[data-f=price]').value) || 0;
-  await fetch(API + '/' + id, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, price }) });
-  load();
+function renderLegend() {
+  document.getElementById('legend').innerHTML = state.shiftTypes
+    .filter(t => t.bgColor !== 'transparent')
+    .map(t => `<span class="chip"><span class="sw" style="background:${t.bgColor}"></span>${t.code} ${esc(t.label)}</span>`)
+    .join('');
 }
 
-// 편집 중인 칸이 폴링으로 덮이지 않도록
-document.addEventListener('focusin', e => { if (e.target.tagName === 'INPUT') hasFocus = true; });
-document.addEventListener('focusout', () => { setTimeout(() => { hasFocus = false; }, 200); });
-// 백그라운드 탭은 폴링이 throttle 되므로, 탭으로 돌아오면 즉시 갱신
-document.addEventListener('visibilitychange', () => { if (!document.hidden && !hasFocus) load(); });
-window.addEventListener('focus', () => { if (!hasFocus) load(); });
+// ── 셀 편집 팝오버 ────────────────────────────────────────
+const pop = document.getElementById('pop');
+let popCell = null;
+document.addEventListener('click', (ev) => {
+  const cell = ev.target.closest('td.cell');
+  if (cell) { openPop(cell); ev.stopPropagation(); return; }
+  if (!ev.target.closest('#pop')) pop.style.display = 'none';
+});
+function openPop(cell) {
+  popCell = cell;
+  const cur = (cell.textContent || '').trim();
+  let h = '<div class="opts">';
+  h += `<div class="opt" data-code="" style="grid-column:span 4;color:#888">지우기 (빈칸)</div>`;
+  for (const t of state.shiftTypes) {
+    const bg = t.bgColor === 'transparent' ? '#fff' : t.bgColor;
+    const fg = t.fgColor || '#2c2c2a';
+    h += `<div class="opt" data-code="${t.code}" style="background:${bg};color:${fg}" title="${esc(t.label)}"><b>${t.code}</b>${esc(t.label)}</div>`;
+  }
+  h += '</div><div class="row"><input id="popinput" placeholder="직접 입력" value="' + esc(cur) + '"><button class="btn" id="popok">확인</button></div>';
+  pop.innerHTML = h;
+  const r = cell.getBoundingClientRect();
+  pop.style.left = Math.min(r.left + window.scrollX, window.scrollX + window.innerWidth - 290) + 'px';
+  pop.style.top = (r.bottom + window.scrollY + 4) + 'px';
+  pop.style.display = 'block';
+  pop.querySelectorAll('.opt').forEach(o => o.onclick = () => setCell(o.dataset.code));
+  pop.querySelector('#popok').onclick = () => setCell(pop.querySelector('#popinput').value.trim());
+  pop.querySelector('#popinput').onkeydown = (e) => { if (e.key === 'Enter') setCell(e.target.value.trim()); };
+}
+async function setCell(code) {
+  const emp = popCell.dataset.emp, date = popCell.dataset.date;
+  pop.style.display = 'none';
+  popCell.innerHTML = badge(code);
+  // 로컬 캐시 갱신
+  const e = state.grid.employees.find(x => x.id === emp);
+  if (code) e.cells[date] = code; else delete e.cells[date];
+  try {
+    const r = await send('/cell', 'PUT', { employeeId: emp, date, code });
+    const row = document.querySelector(`tr[data-emp="${emp}"]`);
+    for (const b of state.buckets) {
+      const cell = row.querySelector(`td[data-tot="${b.key}"]`);
+      if (cell) cell.textContent = fmt(r.totals[b.key]);
+      e.totals[b.key] = r.totals[b.key];
+    }
+  } catch (err) { alert('저장 실패: ' + (err.message || err.error || '')); }
+}
 
-load();
-setInterval(() => { if (!hasFocus && !document.hidden) load(); }, 3000);
+// ── 근무형태 세팅 렌더 ────────────────────────────────────
+function contribStr(c) {
+  if (!c || !c.length) return '<span class="contribs">—</span>';
+  return c.map(x => `<span class="contribs">${x.bucket} +${x.weight}</span>`).join(' · ');
+}
+async function renderShiftTypes() {
+  const types = await api('/shift-types');
+  state.shiftTypes = types;
+  let h = '<thead><tr><th>코드</th><th>라벨</th><th>색</th><th>집계 기여</th></tr></thead><tbody>';
+  for (const t of types) {
+    const bg = t.bgColor === 'transparent' ? '#fff' : t.bgColor;
+    h += `<tr>
+      <td class="mono">${t.code}</td>
+      <td>${esc(t.label)}</td>
+      <td><span class="sw-lg" style="background:${bg}"></span></td>
+      <td>${contribStr(t.contributions)}</td>
+    </tr>`;
+  }
+  h += '</tbody>';
+  document.getElementById('shifttable').innerHTML = h;
+}
+
+// ── 직원 관리 렌더 ────────────────────────────────────────
+async function renderEmployees() {
+  const emps = await api('/employees');
+  let h = '<thead><tr><th>성명</th><th>직급</th><th>부서</th><th></th></tr></thead><tbody>';
+  for (const e of emps) {
+    h += `<tr data-id="${e.id}">
+      <td><input data-f="name" value="${esc(e.name)}"></td>
+      <td><input data-f="rank" value="${esc(e.rank || '')}" style="width:90px"></td>
+      <td><input data-f="dept" value="${esc(e.dept || '')}" style="width:120px"></td>
+      <td><button class="btn save">저장</button> <button class="btn del">삭제</button></td>
+    </tr>`;
+  }
+  h += '</tbody>';
+  const tbl = document.getElementById('emptable');
+  tbl.innerHTML = h;
+  tbl.querySelectorAll('tr[data-id]').forEach(tr => {
+    const id = tr.dataset.id;
+    tr.querySelector('.save').onclick = async () => {
+      const dto = {}; tr.querySelectorAll('input').forEach(i => dto[i.dataset.f] = i.value);
+      await send('/employees/' + id, 'PATCH', dto); flash(tr.querySelector('.save'));
+    };
+    tr.querySelector('.del').onclick = async () => {
+      if (!confirm('삭제하시겠습니까?')) return;
+      await fetch(API + 'schedule/employees/' + id, { method: 'DELETE' }); renderEmployees();
+    };
+  });
+}
+document.getElementById('addemp').onclick = async () => {
+  const name = prompt('직원 성명'); if (!name) return;
+  await send('/employees', 'POST', { name }); renderEmployees();
+};
+
+// ── util ────────────────────────────────────────────────
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmt(n) { return (n == null ? 0 : n).toFixed(1); }
+function flash(btn) { const t = btn.textContent; btn.textContent = '✓'; setTimeout(() => btn.textContent = t, 800); }
+
+loadGrid().catch(e => document.querySelector('main').innerHTML =
+  '<p class="hint">로드 실패: ' + (e.message || e.error || JSON.stringify(e)) + '</p>');
 </script>
 </body>
 </html>

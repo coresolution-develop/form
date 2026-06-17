@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
 import { PrismaModule } from './prisma/prisma.module';
 import { SyncModule } from './sync/sync.module';
-import { ProductModule } from './product/product.module';
+import { ScheduleModule } from './schedule/schedule.module';
 
 @Module({
   imports: [
@@ -16,7 +16,7 @@ import { ProductModule } from './product/product.module';
       },
     }),
     SyncModule,
-    ProductModule,
+    ScheduleModule,
   ],
 })
 export class AppModule {}
