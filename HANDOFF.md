@@ -64,7 +64,11 @@
   - 서버 `.env` `SHEET_TAB` 이 구 `시트1` 이면 reconcile 가 엉뚱한 탭을 읽음 → `근무표` 로.
   - BullMQ **고정 jobId + removeOnFail 유지** 조합은 실패 잡이 같은 id 재추가를 막아 영구 정지 → 설정 잡은 auto-id.
   - 시트 `A1` 월은 **텍스트**(`'2026-06`)여야 함(날짜 자동변환 방지).
-- **다음 달 운영**: 시트 `A1` 을 다음 달(YYYY-MM)로, DB `ScheduleConfig.activeMonth` 도 맞추고(또는 `PATCH /schedule/config`) 그리드 비우고 새로 입력 → reconcile. (월별 탭 분리 정책은 추후 결정)
+- **월별 탭 + 다음 달 자동화 (2026-06-18 추가)**:
+  - 시트는 **월마다 한 탭** `근무표-YYYY-MM` (과거 탭 아카이브). 탭 = `SHEET_TAB`(접두사) + `-월`. 동기화·reconcile·onEdit·db→sheet 전부 월→탭으로 타겟.
+  - **`POST /schedule/months/roll`** (UI `＋ 다음 달 준비` 버튼): 다음 달 탭 생성(`ensureTab`) + 명부 채움(코드 빈칸, A1은 RAW 라 텍스트 유지) + `activeMonth` 전환.
+  - reconcile 는 **월 스코프**로 변경 — 직원 전역 삭제 안 함, 그 달 탭에서 빠진 직원의 **그 달 배정만** 정리.
+  - **마이그레이션(1회)**: 기존 `근무표` 탭 → `근무표-2026-06` 로 rename, Apps Script 재붙여넣기(`근무표-YYYY-MM` 매칭). **라이브 검증 완료**: reconcile 2026-06 16명, roll → `근무표-2026-07` 자동생성+명부+activeMonth 전환, 웹↔7월탭 셀 반영.
 
 ### 2-1. 확정된 결정
 - **형태**: 월간 그리드 — **직원(행) × 날짜(열)**, 각 칸에 시프트.
