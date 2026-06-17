@@ -32,4 +32,16 @@ export class SyncController {
     }
     return { ok: true, count: body.rows?.length ?? 0 };
   }
+
+  /** `설정` 탭 편집 → 설정 전체 재읽기 큐잉 (본문 불필요, 탭을 통째로 다시 읽음) */
+  @Post('settings-webhook')
+  async fromSettings(@Headers('x-webhook-secret') secret: string) {
+    if (secret !== process.env.SHEET_WEBHOOK_SECRET) {
+      this.logger.warn('settings webhook rejected: bad secret');
+      throw new UnauthorizedException();
+    }
+    this.logger.log('settings webhook received');
+    await this.producer.enqueueSheetToSettings();
+    return { ok: true };
+  }
 }

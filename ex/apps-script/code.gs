@@ -9,9 +9,10 @@
  *   3행~          = 직원 1명 = 1행
  * 편집된 행의 (empId, 성명, 직급, 날짜셀 전체)를 webhook 으로 보낸다.
  */
-const WEBHOOK_URL = 'https://form.sosyge.net/ex/sync/sheet-webhook'; // 운영 주소
+const WEBHOOK_BASE = 'https://form.sosyge.net/ex/sync'; // 운영 주소
 const SECRET = 'PUT_THE_SAME_SECRET_AS_ENV'; // .env 의 SHEET_WEBHOOK_SECRET 와 동일 값
-const TAB_NAME = '근무표';
+const TAB_NAME = '근무표'; // 그리드 탭
+const SETTINGS_TAB = '설정'; // 근무형태 세팅 탭
 
 const MONTH_CELL = 'A1';
 const DATA_START_ROW = 3;
@@ -30,7 +31,21 @@ function daysInMonth_(month) {
 function onEditInstallable(e) {
   const range = e.range;
   const sheet = range.getSheet();
-  if (sheet.getName() !== TAB_NAME) return;
+  const name = sheet.getName();
+
+  // 설정 탭 편집 → 본문 없이 webhook (서버가 탭 전체 재읽기)
+  if (name === SETTINGS_TAB) {
+    UrlFetchApp.fetch(WEBHOOK_BASE + '/settings-webhook', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'X-Webhook-Secret': SECRET },
+      payload: '{}',
+      muteHttpExceptions: true,
+    });
+    return;
+  }
+
+  if (name !== TAB_NAME) return;
 
   const month = String(sheet.getRange(MONTH_CELL).getValue() || '').trim();
   if (!/^\d{4}-\d{2}$/.test(month)) return; // 월 앵커 없으면 무시
@@ -61,7 +76,7 @@ function onEditInstallable(e) {
     });
   }
 
-  UrlFetchApp.fetch(WEBHOOK_URL, {
+  UrlFetchApp.fetch(WEBHOOK_BASE + '/sheet-webhook', {
     method: 'post',
     contentType: 'application/json',
     headers: { 'X-Webhook-Secret': SECRET },

@@ -105,7 +105,9 @@
   <section id="view-shift" class="hidden">
     <div class="section-h"><h2>근무형태 세팅</h2>
       <button class="btn" id="addshift">+ 근무형태 추가</button>
-      <span class="hint">코드 → 색 · 버킷별 가중치(빈칸=0). 그리드 색·합계가 여기서 나옵니다.</span>
+      <button class="btn" id="pullshift" title="설정 탭 → DB">↓ 시트에서</button>
+      <button class="btn" id="pushshift" title="DB → 설정 탭">↑ 시트로</button>
+      <span class="hint" id="shiftmsg">코드 → 색 · 버킷별 가중치(빈칸=0). `설정` 탭과 양방향 동기화.</span>
     </div>
     <div style="overflow-x:auto;"><table class="cfg" id="shifttable" style="min-width:680px"></table></div>
   </section>
@@ -348,6 +350,17 @@ document.getElementById('addshift').onclick = async () => {
   const nextSort = Math.max(0, ...state.shiftTypes.map(t => t.sortOrder || 0)) + 1;
   tbody.insertAdjacentHTML('afterbegin', shiftRowHtml({ code: '', label: '', bgColor: 'transparent', fgColor: '', contributions: [], sortOrder: nextSort }, true));
   wireShiftRow(tbody.querySelector('tr'));
+};
+const shiftMsg = (t) => { const el = document.getElementById('shiftmsg'); if (el) el.textContent = t; };
+document.getElementById('pullshift').onclick = async () => {
+  shiftMsg('시트에서 가져오는 중…');
+  try { await send('/settings/pull', 'POST'); setTimeout(async () => { await renderShiftTypes(); if (state.grid) { state.shiftTypes = await api('/shift-types'); renderGrid(); renderLegend(); } shiftMsg('시트 → DB 반영됨'); }, 1200); }
+  catch (e) { shiftMsg('실패: ' + (e.message || e.error || '')); }
+};
+document.getElementById('pushshift').onclick = async () => {
+  shiftMsg('시트로 내보내는 중…');
+  try { await send('/settings/push', 'POST'); shiftMsg('DB → `설정` 탭 반영됨'); }
+  catch (e) { shiftMsg('실패: ' + (e.message || e.error || '')); }
 };
 
 // ── 직원 관리 렌더 ────────────────────────────────────────

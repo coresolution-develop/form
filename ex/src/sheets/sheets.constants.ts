@@ -35,3 +35,21 @@ export const dayCol = (day: number) => DAY_START_COL + day - 1;
 
 /** 합계열 시작 인덱스 (날짜 N일 다음 칸) */
 export const totalsStartCol = (dayCount: number) => DAY_START_COL + dayCount;
+
+/**
+ * 근무형태 세팅 시트 계약 (별도 `설정` 탭, 양방향).
+ *
+ *   1행(헤더) = code | label | bg | fg | <버킷 라벨들...>
+ *   2행~      = 근무형태 1종 = 1행. 색은 hex 텍스트(값)라 values API로 양방향 가능.
+ *
+ * 양방향: 웹 편집 → 탭 전체 재기록(API, onEdit 미발생). 탭 편집 → onEdit → 탭 전체 재읽기 → DB upsert/삭제.
+ */
+export const SETTINGS_TAB = process.env.SETTINGS_TAB ?? '설정';
+export const SET_DATA_START_ROW = 2;
+export const SET_COL_CODE = 1; // A
+export const SET_COL_LABEL = 2; // B
+export const SET_COL_BG = 3; // C
+export const SET_COL_FG = 4; // D
+export const SET_BUCKET_START_COL = 5; // E.. = 버킷별 가중치
+export const settingsLastCol = (bucketCount: number) =>
+  colLetter(SET_BUCKET_START_COL - 1 + bucketCount);

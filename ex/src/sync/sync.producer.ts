@@ -32,4 +32,22 @@ export class SyncProducer {
       },
     );
   }
+
+  /** 설정 DB→시트: 설정 탭 전체 재기록 (단일 작업으로 합쳐짐) */
+  async enqueueSettingsToSheet() {
+    await this.queue.add(
+      'settings-to-sheet',
+      {},
+      { jobId: 'settings-to-sheet', removeOnComplete: true, removeOnFail: 100 },
+    );
+  }
+
+  /** 설정 시트→DB: 설정 탭 전체 재읽기 (단일 작업으로 합쳐짐) */
+  async enqueueSheetToSettings() {
+    await this.queue.add(
+      'sheet-to-settings',
+      {},
+      { jobId: 'sheet-to-settings', removeOnComplete: true, removeOnFail: 100 },
+    );
+  }
 }

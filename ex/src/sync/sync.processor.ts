@@ -36,6 +36,67 @@ export class SyncProcessor extends WorkerHost {
       case 'db-to-sheet':
         await this.handleDbToSheet(job.data as { employeeId: string });
         break;
+      case 'settings-to-sheet':
+        await this.handleSettingsToSheet();
+        break;
+      case 'sheet-to-settings':
+        await this.handleSheetToSettings();
+        break;
+    }
+  }
+
+  /** 설정 DB → 시트 (설정 탭 전체 재기록) */
+  private async handleSettingsToSheet() {
+    const [types, buckets] = await Promise.all([
+      this.prisma.shiftType.findMany({ orderBy: { sortOrder: 'asc' } }),
+      this.prisma.aggregateBucket.findMany({ orderBy: { sortOrder: 'asc' } }),
+    ]);
+    const header = ['code', 'label', 'bg', 'fg', ...buckets.map((b) => b.label)];
+    const rows = types.map((t) => {
+      const w: Record<string, number> = {};
+      for (const c of (t.contributions ?? []) as any[]) w[c.bucket] = c.weight;
+      return [
+        t.code,
+        t.label,
+        t.bgColor,
+        t.fgColor,
+        ...buckets.map((b) => (b.key in w ? w[b.key] : '')),
+      ];
+    });
+    await this.client.writeSettings([header, ...rows], buckets.length);
+  }
+
+  /** 설정 시트 → DB (설정 탭 전체 재읽기 → upsert + 삭제보정) */
+  private async handleSheetToSettings() {
+    const buckets = await this.prisma.aggregateBucket.findMany({
+      orderBy: { sortOrder: 'asc' },
+    });
+    const rows = await this.client.readSettings(buckets.length);
+
+    const seen: string[] = [];
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r.code) continue;
+      const contributions = buckets
+        .map((b, idx) => ({ bucket: b.key, weight: r.weights[idx] }))
+        .filter((c) => c.weight !== 0);
+      const data = {
+        label: r.label || r.code,
+        bgColor: r.bg,
+        fgColor: r.fg,
+        sortOrder: i,
+        contributions: contributions as any,
+      };
+      await this.prisma.shiftType.upsert({
+        where: { code: r.code },
+        create: { code: r.code, ...data },
+        update: data,
+      });
+      seen.push(r.code);
+    }
+    // 시트에서 사라진 코드 삭제 (시트가 비어 보이면 전부 삭제 방지)
+    if (seen.length) {
+      await this.prisma.shiftType.deleteMany({ where: { code: { notIn: seen } } });
     }
   }
 

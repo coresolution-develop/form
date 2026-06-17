@@ -56,7 +56,7 @@ export class ScheduleController {
   }
 
   @Put('shift-types')
-  upsertShiftType(
+  async upsertShiftType(
     @Body()
     dto: {
       code: string;
@@ -67,13 +67,31 @@ export class ScheduleController {
       contributions?: Contribution[];
     },
   ) {
-    return this.service.upsertShiftType(dto);
+    const t = await this.service.upsertShiftType(dto);
+    await this.producer.enqueueSettingsToSheet(); // 웹 편집 → 설정 탭 반영
+    return t;
   }
 
   // 코드에 '/' 가 들어가므로(M/, /, /M/Q …) path param 대신 query 로 받는다
   @Delete('shift-types')
-  deleteShiftType(@Query('code') code: string) {
-    return this.service.deleteShiftType(code);
+  async deleteShiftType(@Query('code') code: string) {
+    const t = await this.service.deleteShiftType(code);
+    await this.producer.enqueueSettingsToSheet();
+    return t;
+  }
+
+  /** 설정 DB→시트 강제 푸시 (설정 탭 초기화/복구용) */
+  @Post('settings/push')
+  async pushSettings() {
+    await this.producer.enqueueSettingsToSheet();
+    return { ok: true };
+  }
+
+  /** 설정 시트→DB 강제 풀 (수동 재동기화) */
+  @Post('settings/pull')
+  async pullSettings() {
+    await this.producer.enqueueSheetToSettings();
+    return { ok: true };
   }
 
   @Get('buckets')

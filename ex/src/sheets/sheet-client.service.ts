@@ -8,10 +8,14 @@ import {
   DAY_START_COL,
   MONTH_CELL,
   SHEET_TAB,
+  SETTINGS_TAB,
+  SET_BUCKET_START_COL,
+  SET_DATA_START_ROW,
   colLetter,
   dayCol,
+  settingsLastCol,
 } from './sheets.constants';
-import { SheetEmployeeRow } from './sheets.types';
+import { SheetEmployeeRow, SettingRow } from './sheets.types';
 
 @Injectable()
 export class SheetClientService implements OnModuleInit {
@@ -87,6 +91,44 @@ export class SheetClientService implements OnModuleInit {
       valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       requestBody: { values: [values] },
+    });
+  }
+
+  // ── `설정` 탭 (근무형태 세팅) ────────────────────────────────────────
+  /** 설정 탭 전체 읽기. bucketCount = 가중치 열 수. */
+  async readSettings(bucketCount: number): Promise<SettingRow[]> {
+    const lastCol = settingsLastCol(bucketCount);
+    const res = await this.sheets.spreadsheets.values.get({
+      spreadsheetId: this.spreadsheetId,
+      range: `${SETTINGS_TAB}!A${SET_DATA_START_ROW}:${lastCol}`,
+    });
+    const rows = res.data.values ?? [];
+    return rows
+      .filter((r) => String(r[0] ?? '').trim() !== '')
+      .map((r) => ({
+        code: String(r[0]).trim(),
+        label: String(r[1] ?? '').trim(),
+        bg: String(r[2] ?? '').trim() || 'transparent',
+        fg: String(r[3] ?? '').trim(),
+        weights: Array.from({ length: bucketCount }, (_, i) => {
+          const v = parseFloat(r[SET_BUCKET_START_COL - 1 + i]);
+          return Number.isNaN(v) ? 0 : v;
+        }),
+      }));
+  }
+
+  /** 설정 탭 A1부터 블록(헤더+행) 기록 + 그 아래 잔여 행 비우기. */
+  async writeSettings(values: any[][], bucketCount: number) {
+    await this.sheets.spreadsheets.values.update({
+      spreadsheetId: this.spreadsheetId,
+      range: `${SETTINGS_TAB}!A1`,
+      valueInputOption: 'RAW',
+      requestBody: { values },
+    });
+    const lastCol = settingsLastCol(bucketCount);
+    await this.sheets.spreadsheets.values.clear({
+      spreadsheetId: this.spreadsheetId,
+      range: `${SETTINGS_TAB}!A${values.length + 1}:${lastCol}1000`,
     });
   }
 }
