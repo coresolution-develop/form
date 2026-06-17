@@ -1,0 +1,18 @@
+# ex/ Sheets Sync (NestJS) — 운영 서버 systemd 유닛.
+# Apache(httpd)가 form.sosyge.net/ex/ → 127.0.0.1:9100 으로 프록시한다.
+[Unit]
+Description=FormFlow Sheets-Sync (ex)
+After=network.target mysqld.service redis.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/formflow-ex-src/ex
+EnvironmentFile=/opt/formflow-ex-src/ex/.env
+# node 경로는 서버에 맞게 (which node 로 확인). nvm 사용 시 절대경로로.
+ExecStart=/usr/bin/node dist/main.js
+Restart=on-failure
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target
