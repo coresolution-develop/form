@@ -26,6 +26,12 @@ cp -a "$STAGING_DIR/package.json" "$STAGING_DIR/package-lock.json" "$APP_DIR/"
 echo "[deploy-ex] 코드 배치 완료 -> $APP_DIR"
 
 cd "$APP_DIR"
+# .env 를 환경으로 로드 (prisma migrate 가 DATABASE_URL 을 읽도록)
+if [ -f "$APP_DIR/.env" ]; then
+  set -a; . "$APP_DIR/.env"; set +a
+else
+  echo "[deploy-ex] ERROR: $APP_DIR/.env 가 없습니다 (DATABASE_URL 등 필요)"; exit 1
+fi
 npm ci --omit=dev
 npx --yes prisma generate
 npx --yes prisma migrate deploy
