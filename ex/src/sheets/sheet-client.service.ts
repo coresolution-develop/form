@@ -45,4 +45,20 @@ export class SheetClientService implements OnModuleInit {
       requestBody: { values: [values] },
     });
   }
+
+  /** 시트 전체 데이터 행 읽기 (재동기화용). onEdit이 못 잡는 삭제를 맞추는 데 쓴다. */
+  async readAll() {
+    const res = await this.sheets.spreadsheets.values.get({
+      spreadsheetId: this.spreadsheetId,
+      range: `${SHEET_TAB}!A2:H`,
+    });
+    return (res.data.values ?? []).map((row, i) => ({
+      rowIndex: i + 2,
+      id: String(row[0] ?? ''),
+      name: (row[1] ?? '') as string,
+      price: row[2],
+      status: (row[3] ?? 'active') as string,
+      memo: (row[4] ?? null) as string | null,
+    }));
+  }
 }

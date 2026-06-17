@@ -29,6 +29,7 @@
     <input id="new-name" placeholder="상품명" />
     <input id="new-price" type="number" placeholder="가격" style="max-width:160px" />
     <button onclick="createProduct()">추가</button>
+    <button class="ghost" onclick="reconcile()">시트와 동기화</button>
   </div>
 
   <table>
@@ -66,6 +67,13 @@ async function createProduct() {
   load();
 }
 
+async function reconcile() {
+  const res = await fetch(API + '/reconcile', { method: 'POST' });
+  const r = await res.json();
+  await load();
+  alert(`재동기화 완료 — 시트 기준 ${r.reconciled}개 반영, DB에서 ${r.deleted}개 삭제`);
+}
+
 async function save(id, btn) {
   const tr = btn.closest('tr');
   const name = tr.querySelector('[data-f=name]').value;
@@ -77,9 +85,12 @@ async function save(id, btn) {
 // 편집 중인 칸이 폴링으로 덮이지 않도록
 document.addEventListener('focusin', e => { if (e.target.tagName === 'INPUT') hasFocus = true; });
 document.addEventListener('focusout', () => { setTimeout(() => { hasFocus = false; }, 200); });
+// 백그라운드 탭은 폴링이 throttle 되므로, 탭으로 돌아오면 즉시 갱신
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !hasFocus) load(); });
+window.addEventListener('focus', () => { if (!hasFocus) load(); });
 
 load();
-setInterval(() => { if (!hasFocus) load(); }, 3000);
+setInterval(() => { if (!hasFocus && !document.hidden) load(); }, 3000);
 </script>
 </body>
 </html>
