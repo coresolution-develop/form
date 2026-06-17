@@ -1,0 +1,27 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id         String   @id @default(cuid())
+  name       String
+  price      Int
+  status     String   @default("active")
+  memo       String?
+
+  // 동기화 메타
+  source     String   @default("sheet") // 'sheet' | 'service'
+  syncStatus String   @default("synced") // 'synced' | 'error' | 'pending'
+  computed   Int      @default(0) // 서비스가 계산하는 값(예시)
+  rowIndex   Int? // 시트 행 위치 캐시(보조용)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([source])
+}
