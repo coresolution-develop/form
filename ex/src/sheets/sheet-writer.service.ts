@@ -23,4 +23,37 @@ export class SheetWriterService {
       [[fields.syncStatus, fields.computed, fields.updatedAt]],
     );
   }
+
+  // ── 웹(서비스) 측 입력 — 실험상 행 전체를 쓴다 ──────────────────────────
+  /** 웹 신규 생성 → 시트 끝에 새 행 추가 (A~H 전체) */
+  async appendNewRow(p: ProductRow) {
+    await this.client.appendRow([
+      p.id, p.name, p.price, p.status, p.memo ?? '',
+      p.syncStatus, p.computed, p.updatedAt.toISOString(),
+    ]);
+  }
+
+  /** 웹 수정 → 시트 행 B~H 갱신 (A=id 유지). 시트에 행이 없으면 추가. */
+  async writeFullRow(p: ProductRow) {
+    const rowIndex = await this.client.findRowIndexById(p.id);
+    if (!rowIndex) {
+      await this.appendNewRow(p);
+      return;
+    }
+    await this.client.writeRange(
+      `${COL.name}${rowIndex}:${COL.updatedAt}${rowIndex}`,
+      [[p.name, p.price, p.status, p.memo ?? '', p.syncStatus, p.computed, p.updatedAt.toISOString()]],
+    );
+  }
+}
+
+interface ProductRow {
+  id: string;
+  name: string;
+  price: number;
+  status: string;
+  memo: string | null;
+  syncStatus: string;
+  computed: number;
+  updatedAt: Date;
 }

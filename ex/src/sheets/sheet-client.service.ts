@@ -34,4 +34,15 @@ export class SheetClientService implements OnModuleInit {
       requestBody: { values },
     });
   }
+
+  /** 시트 끝에 새 행 추가 (웹에서 신규 생성 시). API 쓰기라 onEdit 안 터짐. */
+  async appendRow(values: any[]) {
+    await this.sheets.spreadsheets.values.append({
+      spreadsheetId: this.spreadsheetId,
+      range: `${SHEET_TAB}!A1`,
+      valueInputOption: 'RAW',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: { values: [values] },
+    });
+  }
 }

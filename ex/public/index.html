@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sheets Sync — Products</title>
+<style>
+  body { font-family: system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif; max-width: 880px; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  .muted { color: #888; font-size: 13px; margin-top: 0; }
+  .form { display: flex; gap: 8px; margin: 1.2rem 0; }
+  .form input { flex: 1; }
+  input { padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border-bottom: 1px solid #eee; padding: 8px 6px; text-align: left; font-size: 14px; }
+  th { color: #666; font-weight: 600; font-size: 12px; }
+  td input { width: 100%; }
+  button { padding: 6px 12px; border: 1px solid #378ADD; background: #378ADD; color: #fff; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  button.ghost { background: #fff; color: #378ADD; }
+  .id { font-family: ui-monospace, monospace; font-size: 11px; color: #aaa; }
+  .badge { font-size: 11px; color: #1d9e75; }
+</style>
+</head>
+<body>
+  <h1>Sheets Sync — Products</h1>
+  <p class="muted">웹 ↔ DB ↔ Google Sheets 삼방향 동기화 · 3초마다 자동 새로고침</p>
+
+  <div class="form">
+    <input id="new-name" placeholder="상품명" />
+    <input id="new-price" type="number" placeholder="가격" style="max-width:160px" />
+    <button onclick="createProduct()">추가</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>id</th><th>name</th><th>price</th><th>computed</th><th>status</th><th></th></tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+<script>
+const API = '/products';
+let hasFocus = false;
+
+async function load() {
+  const res = await fetch(API);
+  const products = await res.json();
+  document.getElementById('rows').innerHTML = products.map(p => `
+    <tr>
+      <td class="id">${p.id.slice(0, 8)}…</td>
+      <td><input value="${(p.name ?? '').replace(/"/g, '&quot;')}" data-f="name" /></td>
+      <td><input type="number" value="${p.price ?? 0}" data-f="price" style="max-width:120px" /></td>
+      <td><span class="badge">${p.computed}</span></td>
+      <td>${p.status}</td>
+      <td><button class="ghost" onclick="save('${p.id}', this)">저장</button></td>
+    </tr>`).join('');
+}
+
+async function createProduct() {
+  const name = document.getElementById('new-name').value.trim();
+  const price = Number(document.getElementById('new-price').value) || 0;
+  if (!name) return;
+  await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, price }) });
+  document.getElementById('new-name').value = '';
+  document.getElementById('new-price').value = '';
+  load();
+}
+
+async function save(id, btn) {
+  const tr = btn.closest('tr');
+  const name = tr.querySelector('[data-f=name]').value;
+  const price = Number(tr.querySelector('[data-f=price]').value) || 0;
+  await fetch(API + '/' + id, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, price }) });
+  load();
+}
+
+// 편집 중인 칸이 폴링으로 덮이지 않도록
+document.addEventListener('focusin', e => { if (e.target.tagName === 'INPUT') hasFocus = true; });
+document.addEventListener('focusout', () => { setTimeout(() => { hasFocus = false; }, 200); });
+
+load();
+setInterval(() => { if (!hasFocus) load(); }, 3000);
+</script>
+</body>
+</html>
