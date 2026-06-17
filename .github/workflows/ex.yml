@@ -1,0 +1,68 @@
+name: ex (Sheets Sync) CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ex/**'
+      - '.github/workflows/ex.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'ex/**'
+      - '.github/workflows/ex.yml'
+
+concurrency:
+  group: ex-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 빌드는 GitHub 호스티드 (서버 부담 없음)
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: ex/package-lock.json
+      - name: Install
+        working-directory: ex
+        run: npm ci
+      - name: Generate Prisma Client and build
+        working-directory: ex
+        run: |
+          npx prisma generate
+          npm run build
+      - name: Pack
+        working-directory: ex
+        run: |
+          tar -czf ex-bundle.tar.gz dist public prisma package.json package-lock.json
+          cp deploy/deploy-ex.sh ./deploy-ex.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ex-bundle
+          path: |
+            ex/ex-bundle.tar.gz
+            ex/deploy-ex.sh
+          retention-days: 1
+
+  # 배포는 서버에 설치된 self-hosted 러너 (SSH/방화벽 불필요)
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, linux]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ex-bundle
+          path: bundle
+      - name: Deploy
+        run: |
+          STAGING=/tmp/formflow-ex
+          rm -rf "$STAGING"; mkdir -p "$STAGING"
+          tar -xzf bundle/ex-bundle.tar.gz -C "$STAGING"
+          cp bundle/deploy-ex.sh "$STAGING/deploy-ex.sh"
+          chmod +x "$STAGING/deploy-ex.sh"
+          STAGING_DIR="$STAGING" bash "$STAGING/deploy-ex.sh"
