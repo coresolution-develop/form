@@ -64,6 +64,12 @@
   .mono { font-family: ui-monospace, Menlo, monospace; }
   .contribs { font-size: 12px; color: var(--muted); }
   .sw-lg { width: 24px; height: 18px; border-radius: 4px; border: 1px solid var(--line2); display: inline-block; vertical-align: -3px; }
+  table.cfg td.wt { text-align: center; } table.cfg td.wt input { width: 44px; text-align: center; padding: 4px 2px; }
+  .badge-prev { display:inline-block; min-width:24px; height:20px; line-height:20px; text-align:center; border-radius:4px; padding:0 5px; font-weight:600; border:1px solid var(--line); }
+  .colin { width: 96px; }
+  td.presets { white-space: nowrap; }
+  td.presets button { width:18px; height:18px; border-radius:4px; border:1px solid var(--line2); cursor:pointer; padding:0; margin:1px; vertical-align:middle; }
+  tr.newrow { background: #f1f7ff; }
   .section-h { display: flex; align-items: center; gap: 10px; margin: 4px 0 14px; }
   .section-h h2 { font-size: 16px; margin: 0; font-weight: 600; }
   .hidden { display: none; }
@@ -97,8 +103,11 @@
 
   <!-- 근무형태 세팅 -->
   <section id="view-shift" class="hidden">
-    <div class="section-h"><h2>근무형태 세팅</h2><span class="hint">코드 → 색 · 집계기여(버킷·가중치). 그리드 색과 합계가 여기서 나옵니다.</span></div>
-    <table class="cfg" id="shifttable"></table>
+    <div class="section-h"><h2>근무형태 세팅</h2>
+      <button class="btn" id="addshift">+ 근무형태 추가</button>
+      <span class="hint">코드 → 색 · 버킷별 가중치(빈칸=0). 그리드 색·합계가 여기서 나옵니다.</span>
+    </div>
+    <div style="overflow-x:auto;"><table class="cfg" id="shifttable" style="min-width:680px"></table></div>
   </section>
 
   <!-- 직원 -->
@@ -242,27 +251,104 @@ async function setCell(code) {
   } catch (err) { alert('저장 실패: ' + (err.message || err.error || '')); }
 }
 
-// ── 근무형태 세팅 렌더 ────────────────────────────────────
-function contribStr(c) {
-  if (!c || !c.length) return '<span class="contribs">—</span>';
-  return c.map(x => `<span class="contribs">${x.bucket} +${x.weight}</span>`).join(' · ');
+// ── 근무형태 세팅 (편집) ──────────────────────────────────
+const PRESETS = [
+  ['투명','transparent',''], ['파랑','#E6F1FB','#0C447C'], ['초록','#EAF3DE','#27500A'],
+  ['앰버','#FAEEDA','#633806'], ['회색','#F1EFE8','#5F5E5A'], ['청록','#E1F5EE','#0F6E56'],
+  ['보라','#EEEDFE','#3C3489'], ['빨강','#FCEBEB','#791F1F'], ['분홍','#FBEAF0','#72243E'], ['코랄','#FAECE7','#712B13'],
+];
+function shiftRowHtml(t, isNew) {
+  const codeCell = isNew
+    ? `<input data-f="code" placeholder="코드" class="mono" style="width:72px">`
+    : `<span class="mono">${esc(t.code)}</span>`;
+  const wts = state.buckets.map(b => {
+    const c = (t.contributions || []).find(x => x.bucket === b.key);
+    return `<td class="wt"><input data-w="${b.key}" type="number" step="0.5" value="${c ? c.weight : ''}"></td>`;
+  }).join('');
+  const bg = t.bgColor || 'transparent';
+  return `<tr class="${isNew ? 'newrow' : ''}" data-code="${isNew ? '' : esc(t.code)}" data-sort="${t.sortOrder ?? 0}">
+    <td>${codeCell}</td>
+    <td><input data-f="label" value="${esc(t.label || '')}" style="width:128px"></td>
+    <td><span class="badge-prev prev" style="background:${bg === 'transparent' ? '#fff' : bg};color:${t.fgColor || '#2c2c2a'}">${esc(t.code || '?')}</span></td>
+    <td><input data-f="bgColor" class="colin mono" value="${esc(t.bgColor || 'transparent')}"></td>
+    <td><input data-f="fgColor" class="colin mono" value="${esc(t.fgColor || '')}"></td>
+    ${wts}
+    <td class="presets"></td>
+    <td style="white-space:nowrap"><button class="btn save">저장</button> <button class="btn del">삭제</button></td>
+  </tr>`;
 }
 async function renderShiftTypes() {
-  const types = await api('/shift-types');
-  state.shiftTypes = types;
-  let h = '<thead><tr><th>코드</th><th>라벨</th><th>색</th><th>집계 기여</th></tr></thead><tbody>';
-  for (const t of types) {
-    const bg = t.bgColor === 'transparent' ? '#fff' : t.bgColor;
-    h += `<tr>
-      <td class="mono">${t.code}</td>
-      <td>${esc(t.label)}</td>
-      <td><span class="sw-lg" style="background:${bg}"></span></td>
-      <td>${contribStr(t.contributions)}</td>
-    </tr>`;
-  }
-  h += '</tbody>';
-  document.getElementById('shifttable').innerHTML = h;
+  const [types, buckets] = await Promise.all([api('/shift-types'), api('/buckets')]);
+  state.shiftTypes = types; state.buckets = buckets;
+  const head = '<thead><tr><th>코드</th><th>라벨</th><th>배지</th><th>배경</th><th>글자</th>'
+    + buckets.map(b => `<th class="wt" title="가중치">${b.label}</th>`).join('')
+    + '<th>프리셋</th><th></th></tr></thead>';
+  const tbl = document.getElementById('shifttable');
+  tbl.innerHTML = head + '<tbody>' + types.map(t => shiftRowHtml(t, false)).join('') + '</tbody>';
+  tbl.querySelectorAll('tbody tr').forEach(wireShiftRow);
 }
+function wireShiftRow(tr) {
+  const prev = tr.querySelector('.prev');
+  const upd = () => {
+    const bg = (tr.querySelector('[data-f="bgColor"]').value || 'transparent').trim();
+    const fg = (tr.querySelector('[data-f="fgColor"]').value || '').trim();
+    const codeEl = tr.querySelector('[data-f="code"]');
+    const code = codeEl ? codeEl.value : tr.dataset.code;
+    prev.style.background = bg === 'transparent' ? '#fff' : bg;
+    prev.style.color = fg || '#2c2c2a';
+    prev.textContent = code || '?';
+  };
+  tr.querySelectorAll('input').forEach(i => i.addEventListener('input', upd));
+  const pc = tr.querySelector('.presets');
+  pc.innerHTML = PRESETS.map((p, i) => `<button title="${p[0]}" data-i="${i}" style="background:${p[1] === 'transparent' ? '#fff' : p[1]}"></button>`).join('');
+  pc.querySelectorAll('button').forEach(b => b.onclick = () => {
+    const p = PRESETS[+b.dataset.i];
+    tr.querySelector('[data-f="bgColor"]').value = p[1];
+    tr.querySelector('[data-f="fgColor"]').value = p[2];
+    upd();
+  });
+  tr.querySelector('.save').onclick = () => saveShift(tr);
+  tr.querySelector('.del').onclick = () => delShift(tr);
+}
+async function saveShift(tr) {
+  const codeEl = tr.querySelector('[data-f="code"]');
+  const code = (codeEl ? codeEl.value : tr.dataset.code).trim();
+  const label = tr.querySelector('[data-f="label"]').value.trim();
+  if (!code) return alert('코드를 입력하세요');
+  if (!label) return alert('라벨을 입력하세요');
+  const contributions = [];
+  tr.querySelectorAll('[data-w]').forEach(i => {
+    const w = parseFloat(i.value);
+    if (!isNaN(w) && w !== 0) contributions.push({ bucket: i.dataset.w, weight: w });
+  });
+  const body = {
+    code, label,
+    bgColor: (tr.querySelector('[data-f="bgColor"]').value || 'transparent').trim(),
+    fgColor: (tr.querySelector('[data-f="fgColor"]').value || '').trim(),
+    sortOrder: Number(tr.dataset.sort) || 0,
+    contributions,
+  };
+  const btn = tr.querySelector('.save');
+  try { await send('/shift-types', 'PUT', body); }
+  catch (e) { return alert('저장 실패: ' + (e.message || e.error || '')); }
+  await renderShiftTypes();
+  if (state.grid) { state.shiftTypes = await api('/shift-types'); renderGrid(); renderLegend(); }
+  flash(btn);
+}
+async function delShift(tr) {
+  const code = tr.querySelector('[data-f="code"]') ? '' : tr.dataset.code;
+  if (!code) return tr.remove(); // 저장 전 새 행
+  if (!confirm(code + ' 삭제?')) return;
+  await fetch(API + 'schedule/shift-types?code=' + encodeURIComponent(code), { method: 'DELETE' });
+  await renderShiftTypes();
+}
+document.getElementById('addshift').onclick = async () => {
+  let tbody = document.querySelector('#shifttable tbody');
+  if (!tbody) { await renderShiftTypes(); tbody = document.querySelector('#shifttable tbody'); }
+  const nextSort = Math.max(0, ...state.shiftTypes.map(t => t.sortOrder || 0)) + 1;
+  tbody.insertAdjacentHTML('afterbegin', shiftRowHtml({ code: '', label: '', bgColor: 'transparent', fgColor: '', contributions: [], sortOrder: nextSort }, true));
+  wireShiftRow(tbody.querySelector('tr'));
+};
 
 // ── 직원 관리 렌더 ────────────────────────────────────────
 async function renderEmployees() {

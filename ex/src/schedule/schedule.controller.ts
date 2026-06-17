@@ -70,8 +70,9 @@ export class ScheduleController {
     return this.service.upsertShiftType(dto);
   }
 
-  @Delete('shift-types/:code')
-  deleteShiftType(@Param('code') code: string) {
+  // 코드에 '/' 가 들어가므로(M/, /, /M/Q …) path param 대신 query 로 받는다
+  @Delete('shift-types')
+  deleteShiftType(@Query('code') code: string) {
     return this.service.deleteShiftType(code);
   }
 
