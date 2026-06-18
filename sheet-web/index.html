@@ -74,7 +74,7 @@
   tr.newrow { background: #f1f7ff; }
   .section-h { display: flex; align-items: center; gap: 10px; margin: 4px 0 14px; flex-wrap: wrap; }
   .section-h h2 { font-size: 16px; margin: 0; font-weight: 600; }
-  .hidden { display: none; }
+  .hidden { display: none !important; }   /* .overlay 등 클래스 display 보다 우선 (없으면 모달이 안 닫힘) */
   .msg { font-size: 12px; }
   .msg.ok { color: var(--ok); } .msg.err { color: var(--err); }
   /* 설정/로그인 오버레이 */
