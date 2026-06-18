@@ -1,7 +1,7 @@
 # FormFlow — 작업 핸드오프
 
 > 다른 컴퓨터에서 이어서 작업하기 위한 현재 상태 스냅샷.
-> 마지막 업데이트: 2026-06-18 · 브랜치 `main` (HEAD `39052c7`)
+> 마지막 업데이트: 2026-06-18 · 브랜치 `main` (HEAD `96e4c98`)
 
 ---
 
@@ -10,9 +10,9 @@
 - **운영 배포(prod/dev)** 완료 — `form.sosyge.net` 자가 호스팅 러너 CI/CD로 돌아감.
 - **ex/ Sheets Sync 실험** 완료 — 구글시트 ↔ MySQL ↔ 웹 3-way 동기화가 `form.sosyge.net/ex/`에서 동작 중.
 - **✅ ex/ 를 "근무표(월간 그리드)"로 전환 — 운영 배포 + end-to-end 검증 완료 (2026-06-17).** 실제 시트(코어솔루션 2026-06) CSV로 집계 규칙을 역설계해 **16명 전원 합계 일치 검증**, 스키마·집계엔진·시드·백엔드 API·셀단위 동기화·웹 UI·Apps Script 까지 교체 후 `main` push → 자동배포. `form.sosyge.net/ex/` 에서 **16명·합계가 시트와 일치, 시트↔웹 양방향 동기화 라이브 동작 확인**.
-- **🆕 두 갈래로 확장 (2026-06-18, 아직 운영검증/마감 전):**
+- **🆕 두 갈래로 확장 (2026-06-18):**
   - **(A) ex/ 멀티테넌시** — org 격리 모듈(`src/org/*`) + 마이그레이션 추가. 한 백엔드를 여러 조직이 공유. 거의 완성, **운영 마감 3건 남음**(§8 참조).
-  - **(B) sheet-web/ 서버리스 앱** — NestJS/MySQL/Redis **없이** 브라우저가 구글시트를 직접 읽고 쓰는 단일 페이지 앱. ex/와 **시트 계약 호환**(=ex/의 경량 대체재 후보). v1 동작하나 **하드닝 필요**(§9 참조).
+  - **✅ (B) sheet-web/ 서버리스 앱 — `form.sosyge.net/sheet/` 운영 배포 + 로그인/시트읽기 라이브 검증 완료 (2026-06-18).** NestJS/MySQL/Redis **없이** 브라우저가 구글시트를 직접 읽고 쓰는 단일 페이지 앱. ex/와 **시트 계약 호환**(=ex/의 경량 대체재 후보). 토큰 자동갱신·배포 파이프라인·OAuth origin·모달 버그까지 처리(§9 참조). 잔여 하드닝은 동시편집/서식 정도.
 - **결정 필요한 갈림길**: 무거운 백엔드(ex/) vs 서버리스(sheet-web) 중 어디에 무게를 둘지. 둘은 같은 시트 구조를 공유해 공존 가능하나, 장기적으로 한쪽으로 수렴하는 게 자연스러움.
 
 ---
@@ -180,10 +180,10 @@ npm run start:dev              # 포트 9100
 3. `updateEmployee` 방어적 `where: { id, orgId }` (현재 안전하나 belt-and-suspenders).
 4. org별 구글시트 바인딩 검증/프로비저닝 흐름 정리.
 
-**(B) sheet-web 하드닝 — §9 상세**
-1. OAuth 토큰 자동 갱신(1시간 만료 → 재로그인 제거). *체감 가장 큰 UX 개선.*
+**(B) sheet-web 하드닝 — §9 상세** (✅ 운영 배포 + 토큰갱신/모달버그 완료, 아래는 잔여)
+1. ~~OAuth 토큰 자동 갱신~~ ✅ 완료(`0baafc4`). ~~모달 안 닫힘~~ ✅ 완료(`96e4c98`).
 2. 다단계 쓰기 부분 실패 처리 / 충돌(last-write-wins) 대응.
-3. 소규모 거친점(초기화 덮어쓰기 경고, 월 시퀀스 빈칸, 입력 검증).
+3. 소규모 거친점(초기화 덮어쓰기 경고, 월 시퀀스 빈칸, 입력 검증, favicon).
 
 ## 7. 주의 / 미해결
 - `form.sosyge.net` **SSL 체인 불완전**(중간 인증서 누락) — 검증 시 `curl -k` 사용 중. 미수정.
@@ -212,21 +212,33 @@ npm run start:dev              # 포트 9100
 
 ---
 
-## 9. sheet-web/ 서버리스 앱 현황 (2026-06-18)
+## 9. sheet-web/ 서버리스 앱 현황 (2026-06-18) — ✅ 운영 배포됨
 
-**커밋**: `0e2b3d0`(앱) · `fbf3e7f`(월 준비 시 기본근무 자동입력) · `0b1de2c`(이번 달 기본근무 채우기) · `7e39bde`(HTML 캐시 끔). 상세는 `sheet-web/README.md`.
+**라이브**: https://form.sosyge.net/sheet/ — 로그인 + 시트 읽기/그리드 렌더 **실사용 검증 완료** (16명 데이터, Sheets API 200).
+
+**커밋**: `0e2b3d0`(앱) · `fbf3e7f`·`0b1de2c`(기본근무 자동입력) · `7e39bde`(HTML 캐시 끔) · `0baafc4`(토큰 자동갱신 + 배포 파이프라인) · `96e4c98`(모달 CSS 버그). 상세는 `sheet-web/README.md`.
 
 ### 구조
-- 단일 파일 `sheet-web/index.html` (~725줄, inline CSS/HTML/JS). 외부 의존 = Google Identity Services 스크립트 하나.
+- 단일 파일 `sheet-web/index.html` (inline CSS/HTML/JS). 외부 의존 = Google Identity Services 스크립트 하나.
 - 브라우저 OAuth 토큰 → Google Sheets API v4 직접 호출. 서버·DB·env 없음. 시트가 SSOT, **여러 조직 = 여러 시트**(앱에서 ⚙ 시트 전환).
 - 탭 이름에서 접두사/월목록/`설정` 탭 자동 감지. 집계는 `설정` 탭 규칙으로 클라이언트 계산. **ex/ 와 시트 계약 호환.**
+
+### 배포 (ex/ 패턴 미러링)
+- **워크플로**: `.github/workflows/sheet-web.yml` — `sheet-web/**` 변경 시 build@GitHub → deploy@self-hosted. push 하면 자동.
+- **배포 산출물**: `sheet-web/deploy/deploy-sheet.sh`(정적 배치 + 헬스체크), `sheet-web/deploy/apache-form-sheet.conf`(Apache `/sheet/` 정적 서빙).
+- **서버 1회 셋업(완료됨)**: `/etc/httpd/conf.d/form.sosyge.net.conf` 의 **첫 `:443` vhost**(프론트+/ex/)에 `/sheet/` Alias 블록 추가 — **catch-all `ProxyPass / → :3001` 위, `/ex/` 옆**. 파일은 `/opt/formflow-sheet/index.html`(ghrunner) 로 배치.
+  - ⚠️ 순서 주의: catch-all 프록시가 위에 있으면 `/sheet/` 가 프론트로 빠져 308. 반드시 `ProxyPass /sheet !` + Alias 를 그 **위**에.
+- **OAuth(완료됨)**: Google Cloud OAuth 클라이언트(웹) — **승인된 자바스크립트 원본**에 `https://form.sosyge.net` 등록. **리디렉션 URI 불필요(토큰 모델)**. 로그인 계정 = `dev@coresolution.kr`(시트 편집권한 보유).
+
+### 오늘 처리한 것 (✅)
+- **토큰 자동갱신**: 만료(~1h) 전 `prompt:'none'` 백그라운드 silent 갱신 + 호출 직전 `ensureToken` 선제갱신 + 401 폴백. 재로그인 팝업 제거. (`index.html` OAuth 블록)
+- **모달 CSS 버그**(`96e4c98`): `.overlay`(display:flex)가 `.hidden`(display:none)보다 뒤 선언이라 같은 specificity 에서 이김 → `closeSetup()` 해도 모달이 안 닫히던 것을 `.hidden !important` 로 해결.
 
 ### 동작하는 것 (✅, README §4)
 월 그리드 보기·셀 편집(즉시 시트 기록 + 합계 자동)·월 이동·`설정` 탭 편집/저장·직원 추가/수정/행삭제·**다음 달 준비**(다음 달 탭 + 명부 이월 + 월~금 `M`/주말 `/` 자동입력)·**기본근무 채우기**(현재 달)·**빈 시트 초기화**(설정 25종 시드).
 
-### 하드닝 필요 (⚠️ — §6-B)
-- **OAuth 토큰 ~1시간 만료, 자동 갱신 없음** (`index.html:185-206`). 현재는 401 → 다음 호출 때 재로그인 1회 재시도. *실사용 가장 거슬리는 지점.* 개선: 만료 전 `prompt:none` 재요청.
+### 잔여 하드닝 (⚠️ — §6-B, 운영엔 지장 없음)
 - **동시편집 충돌 제어 없음** (last-write-wins, `index.html:427~`). 두 명이 같은 칸 편집 시 나중 쓰기가 덮음, 감지 없음.
 - **다단계 쓰기 부분 실패**: 시프트 코드와 합계를 별도 호출로 기록 → 둘째 실패 시 시트 합계만 stale.
 - **셀 서식 미기록**: 색은 웹 UI 에만, 시트는 값만.
-- 소규모 거친점: `빈 시트 초기화` 가 기존 설정 경고 없이 덮어씀 · 월 시퀀스에 빈칸 있으면 `다음 달 준비` 가 엉뚱한 달 생성 · 시프트 코드 입력 검증 없음(임의 텍스트 기록 가능) · 모바일 레이아웃 미검증.
+- 소규모 거친점: `빈 시트 초기화` 가 기존 설정 경고 없이 덮어씀 · 월 시퀀스에 빈칸 있으면 `다음 달 준비` 가 엉뚱한 달 생성 · 시프트 코드 입력 검증 없음 · 모바일 레이아웃 미검증 · favicon 404(무해).
