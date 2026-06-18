@@ -15,26 +15,27 @@ export interface EmployeeRowOut {
   totals: number[]; // 버킷 순서대로
 }
 
+/** 그리드 직원행 되쓰기. 대상 스프레드시트는 조직별 spreadsheetId 로 받는다. */
 @Injectable()
 export class SheetWriterService {
   constructor(private client: SheetClientService) {}
 
   /** 신규 직원행: 운영팀이 만든 행에 DB가 발급한 empId를 A열에 회신 */
-  async writeId(tab: string, rowIndex: number, empId: string) {
-    await this.client.writeRange(tab, `${colLetter(COL_ID)}${rowIndex}`, [[empId]]);
+  async writeId(spreadsheetId: string, tab: string, rowIndex: number, empId: string) {
+    await this.client.writeRange(spreadsheetId, tab, `${colLetter(COL_ID)}${rowIndex}`, [[empId]]);
   }
 
   /**
    * 기존 직원행 갱신 (DB→시트). A열 empId + 날짜셀 + 합계열을 되쓴다.
    * 성명/직급(B,C)은 운영팀 소유라 건드리지 않는다. API 쓰기 → onEdit 미발생.
    */
-  async pushRow(tab: string, rowIndex: number, row: EmployeeRowOut) {
+  async pushRow(spreadsheetId: string, tab: string, rowIndex: number, row: EmployeeRowOut) {
     const dayCount = row.codes.length;
-    await this.client.writeRange(tab, `${colLetter(COL_ID)}${rowIndex}`, [[row.empId]]);
+    await this.client.writeRange(spreadsheetId, tab, `${colLetter(COL_ID)}${rowIndex}`, [[row.empId]]);
 
     const from = colLetter(DAY_START_COL);
     const to = colLetter(totalsStartCol(dayCount) + row.totals.length - 1);
-    await this.client.writeRange(tab, `${from}${rowIndex}:${to}${rowIndex}`, [
+    await this.client.writeRange(spreadsheetId, tab, `${from}${rowIndex}:${to}${rowIndex}`, [
       [...row.codes, ...row.totals],
     ]);
   }
@@ -43,21 +44,27 @@ export class SheetWriterService {
    * 합계열만 갱신 (시트→DB 동기화 시). 날짜셀은 방금 운영팀이 편집한 값이라 안 건드림.
    * dayCount = 그 달 일수, totals = 버킷 순서.
    */
-  async pushTotals(tab: string, rowIndex: number, dayCount: number, totals: number[]) {
+  async pushTotals(
+    spreadsheetId: string,
+    tab: string,
+    rowIndex: number,
+    dayCount: number,
+    totals: number[],
+  ) {
     if (!totals.length) return;
     const from = colLetter(totalsStartCol(dayCount));
     const to = colLetter(totalsStartCol(dayCount) + totals.length - 1);
-    await this.client.writeRange(tab, `${from}${rowIndex}:${to}${rowIndex}`, [totals]);
+    await this.client.writeRange(spreadsheetId, tab, `${from}${rowIndex}:${to}${rowIndex}`, [totals]);
   }
 
   /** empId로 행을 찾아 갱신. 없으면 시트 끝에 새 행 추가. */
-  async upsertRow(tab: string, row: EmployeeRowOut) {
-    const rowIndex = await this.client.findEmployeeRowById(tab, row.empId);
+  async upsertRow(spreadsheetId: string, tab: string, row: EmployeeRowOut) {
+    const rowIndex = await this.client.findEmployeeRowById(spreadsheetId, tab, row.empId);
     if (rowIndex) {
-      await this.pushRow(tab, rowIndex, row);
+      await this.pushRow(spreadsheetId, tab, rowIndex, row);
       return;
     }
-    await this.client.appendRow(tab, [
+    await this.client.appendRow(spreadsheetId, tab, [
       row.empId,
       row.name,
       row.rank,

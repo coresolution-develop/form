@@ -9,9 +9,8 @@
  * 소유: 운영팀 = 성명/직급/날짜셀,  서비스 = empId(A) + 합계열.
  * 단, 웹에서 만든 변경은 서비스가 날짜셀도 API로 되써준다(API 쓰기는 onEdit 미발생 → 루프 없음).
  */
-export const GRID_TAB_PREFIX = process.env.SHEET_TAB ?? '근무표';
-/** 월 → 탭 이름 (예: 2026-07 → 근무표-2026-07) */
-export const gridTab = (month: string) => `${GRID_TAB_PREFIX}-${month}`;
+/** (접두사, 월) → 탭 이름 (예: 근무표,2026-07 → 근무표-2026-07). 접두사는 조직별(Org.gridTabPrefix). */
+export const gridTab = (prefix: string, month: string) => `${prefix}-${month}`;
 export const MONTH_CELL = 'A1';
 export const HEADER_ROW = 2;
 export const DATA_START_ROW = 3;
@@ -45,8 +44,8 @@ export const totalsStartCol = (dayCount: number) => DAY_START_COL + dayCount;
  *   2행~      = 근무형태 1종 = 1행. 색은 hex 텍스트(값)라 values API로 양방향 가능.
  *
  * 양방향: 웹 편집 → 탭 전체 재기록(API, onEdit 미발생). 탭 편집 → onEdit → 탭 전체 재읽기 → DB upsert/삭제.
+ * 설정 탭 이름은 조직별(Org.settingsTab)로 호출자가 전달한다.
  */
-export const SETTINGS_TAB = process.env.SETTINGS_TAB ?? '설정';
 export const SET_DATA_START_ROW = 2;
 export const SET_COL_CODE = 1; // A
 export const SET_COL_LABEL = 2; // B

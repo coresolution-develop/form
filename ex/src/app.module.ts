@@ -4,6 +4,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { PrismaModule } from './prisma/prisma.module';
 import { SyncModule } from './sync/sync.module';
 import { ScheduleModule } from './schedule/schedule.module';
+import { OrgModule } from './org/org.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ScheduleModule } from './schedule/schedule.module';
         port: Number(process.env.REDIS_PORT),
       },
     }),
+    OrgModule,
     SyncModule,
     ScheduleModule,
   ],

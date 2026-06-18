@@ -16,6 +16,7 @@
          color: var(--text); background: var(--bg); font-size: 14px; }
   header { display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
   .org { font-size: 16px; font-weight: 600; }
+  .orgsel { font: inherit; padding: 4px 8px; border: 1px solid var(--line2); border-radius: var(--radius); background: var(--bg); color: var(--text); max-width: 180px; }
   .count { font-size: 12px; color: var(--muted); background: var(--surface); padding: 2px 8px; border-radius: var(--radius); }
   nav { display: flex; gap: 4px; margin-left: auto; }
   nav button { font: inherit; }
@@ -78,6 +79,8 @@
 <body>
 <header>
   <span class="org" id="org">근무표</span>
+  <select id="orgsel" class="orgsel" title="조직 선택"></select>
+  <button class="btn" id="addorg" title="조직 추가">+ 조직</button>
   <span class="count" id="count"></span>
   <nav>
     <button class="tab active" data-view="grid">근무표</button>
@@ -128,8 +131,16 @@
 const API = location.pathname.replace(/\/[^/]*$/, '/');
 const TODAY = '2026-06-17';
 const j = (r) => r.ok ? r.json() : r.json().then(e => Promise.reject(e));
-const api = (p, opt) => fetch(API + 'schedule' + p, opt).then(j);
+
+// ── 테넌트(조직) 컨텍스트 ─────────────────────────────────
+const qsOrg = new URLSearchParams(location.search).get('org');
+let currentOrg = qsOrg || localStorage.getItem('orgId') || '';
+function setOrg(id) { currentOrg = id || ''; if (currentOrg) localStorage.setItem('orgId', currentOrg); }
+const orgHeaders = (extra) => Object.assign({}, currentOrg ? { 'X-Org-Id': currentOrg } : {}, extra || {});
+
+const api = (p, opt = {}) => fetch(API + 'schedule' + p, { ...opt, headers: orgHeaders(opt.headers) }).then(j);
 const send = (p, method, body) => api(p, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+const orgApi = (p, opt) => fetch(API + 'orgs' + p, opt).then(j); // 조직 목록/생성 (테넌트 무관)
 
 let state = { month: null, grid: null, shiftTypes: [], buckets: [] };
 
@@ -349,7 +360,7 @@ async function delShift(tr) {
   const code = tr.querySelector('[data-f="code"]') ? '' : tr.dataset.code;
   if (!code) return tr.remove(); // 저장 전 새 행
   if (!confirm(code + ' 삭제?')) return;
-  await fetch(API + 'schedule/shift-types?code=' + encodeURIComponent(code), { method: 'DELETE' });
+  await send('/shift-types?code=' + encodeURIComponent(code), 'DELETE');
   await renderShiftTypes();
 }
 document.getElementById('addshift').onclick = async () => {
@@ -394,7 +405,7 @@ async function renderEmployees() {
     };
     tr.querySelector('.del').onclick = async () => {
       if (!confirm('삭제하시겠습니까?')) return;
-      await fetch(API + 'schedule/employees/' + id, { method: 'DELETE' }); renderEmployees();
+      await send('/employees/' + id, 'DELETE'); renderEmployees();
     };
   });
 }
@@ -408,8 +419,36 @@ function esc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&l
 function fmt(n) { return (n == null ? 0 : n).toFixed(1); }
 function flash(btn) { const t = btn.textContent; btn.textContent = '✓'; setTimeout(() => btn.textContent = t, 800); }
 
-loadGrid().catch(e => document.querySelector('main').innerHTML =
-  '<p class="hint">로드 실패: ' + (e.message || e.error || JSON.stringify(e)) + '</p>');
+// ── 조직(테넌트) 셀렉터 ───────────────────────────────────
+async function loadOrgs() {
+  let orgs = [];
+  try { orgs = await orgApi(''); } catch (e) { orgs = []; }
+  const sel = document.getElementById('orgsel');
+  sel.innerHTML = orgs.map(o => `<option value="${o.id}">${esc(o.name)}</option>`).join('');
+  const match = orgs.find(o => o.id === currentOrg || o.slug === currentOrg) || orgs[0];
+  if (match) { setOrg(match.id); sel.value = match.id; }
+  sel.onchange = async () => { setOrg(sel.value); await reloadAll(); };
+}
+async function reloadAll() {
+  await loadGrid();
+  const active = document.querySelector('.tab.active') && document.querySelector('.tab.active').dataset.view;
+  if (active === 'shift') renderShiftTypes();
+  if (active === 'emp') renderEmployees();
+}
+document.getElementById('addorg').onclick = async () => {
+  const name = prompt('조직 이름'); if (!name) return;
+  const slug = prompt('slug (URL/식별자, 영문 권장 — 예: test)'); if (!slug) return;
+  const sheetId = prompt('Google 스프레드시트 ID (없으면 빈칸)') || '';
+  const webhookSecret = prompt('웹훅 시크릿 (다른 조직과 겹치지 않는 고유값)'); if (!webhookSecret) return;
+  try {
+    const org = await orgApi('', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, slug, sheetId, webhookSecret }) });
+    setOrg(org.id); await loadOrgs(); document.getElementById('orgsel').value = org.id; await reloadAll();
+  } catch (e) { alert('조직 생성 실패: ' + (e.message || e.error || '')); }
+};
+
+(async () => { await loadOrgs(); await loadGrid(); })().catch(e =>
+  document.querySelector('main').innerHTML =
+    '<p class="hint">로드 실패: ' + (e.message || e.error || JSON.stringify(e)) + '</p>');
 </script>
 </body>
 </html>

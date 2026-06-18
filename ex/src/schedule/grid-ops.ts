@@ -3,11 +3,11 @@ import { computeTotals, ShiftTypeLite } from './aggregation';
 import { Contribution } from './seed.data';
 import { daysInMonth, isoDate, monthRange, fromIso, toIso } from './dates';
 
-/** 집계에 필요한 컨텍스트 (시프트 맵 + 버킷 순서)를 한 번에 로드 */
-export async function loadAggContext(prisma: PrismaService) {
+/** 집계에 필요한 컨텍스트 (시프트 맵 + 버킷 순서)를 한 번에 로드 (조직 스코프) */
+export async function loadAggContext(prisma: PrismaService, orgId: string) {
   const [types, buckets] = await Promise.all([
-    prisma.shiftType.findMany({ orderBy: { sortOrder: 'asc' } }),
-    prisma.aggregateBucket.findMany({ orderBy: { sortOrder: 'asc' } }),
+    prisma.shiftType.findMany({ where: { orgId }, orderBy: { sortOrder: 'asc' } }),
+    prisma.aggregateBucket.findMany({ where: { orgId }, orderBy: { sortOrder: 'asc' } }),
   ]);
   const tMap = new Map<string, ShiftTypeLite>(
     types.map((t) => [
@@ -29,21 +29,23 @@ export function orderedTotals(
   return bucketKeys.map((k) => totals[k]);
 }
 
-/** 한 직원의 한 달 배정을 통째로 교체 (시트→DB 동기화의 핵심). */
+/** 한 직원의 한 달 배정을 통째로 교체 (시트→DB 동기화의 핵심). 조직 스코프. */
 export async function replaceMonthAssignments(
   prisma: PrismaService,
+  orgId: string,
   employeeId: string,
   month: string,
   codes: string[],
   source: 'sheet' | 'service',
 ) {
   const { gte, lt } = monthRange(month);
-  await prisma.assignment.deleteMany({ where: { employeeId, date: { gte, lt } } });
+  await prisma.assignment.deleteMany({ where: { orgId, employeeId, date: { gte, lt } } });
 
   const data = codes
     .map((code, i) => ({ code: (code ?? '').trim(), day: i + 1 }))
     .filter((x) => x.code !== '')
     .map((x) => ({
+      orgId,
       employeeId,
       date: fromIso(isoDate(month, x.day)),
       shift: x.code,
