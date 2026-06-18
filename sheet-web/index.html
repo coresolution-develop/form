@@ -108,6 +108,7 @@
       <button class="iconbtn" id="next">▶</button>
       <button class="btn primary" id="reload">↻ 새로고침</button>
       <button class="btn" id="rollmonth">＋ 다음 달 준비</button>
+      <button class="btn" id="filldefault">🗓 기본근무 채우기</button>
       <button class="btn" id="bootstrap" style="display:none">⚡ 시트 초기화</button>
       <span class="hint" id="syncmsg"></span>
     </div>
@@ -617,6 +618,26 @@ async function rollMonth() {
     msg.innerHTML = `<span class="msg ok">${to} 준비 완료 · 직원 ${emps.length}명 · 월~금 M / 토·일 /</span>`;
   } catch (e) { msg.innerHTML = '<span class="msg err">실패: ' + esc(e.message || e) + '</span>'; }
 }
+// 현재 보고 있는 달의 모든 직원 칸을 기본 근무(월~금 M · 토·일 /)로 채운다 — 빈 달·기존 달 모두.
+async function fillCurrentMonthDefault() {
+  const msg = document.getElementById('syncmsg');
+  if (!(state.monthTab in meta.idByTitle)) return alert(`'${state.monthTab}' 탭이 없습니다. 먼저 ＋ 다음 달 준비 / ⚡ 시트 초기화로 만드세요.`);
+  const emps = (state.grid && state.grid.employees) || [];
+  if (!emps.length) return alert('이 달에 직원이 없습니다.');
+  if (!confirm(`${state.month}의 모든 직원 칸을 기본 근무(월~금 M · 토·일 /)로 채웁니다. 기존 코드는 덮어써집니다. 진행할까요?`)) return;
+  try {
+    msg.textContent = '기본근무 채우는 중…';
+    const dayCodes = defaultDayCodes(state.month);
+    const tot = computeTotals(dayCodes);
+    const line = [...dayCodes, ...state.buckets.map((b) => tot[b.key])];
+    const lastCol = colLetter(DAY_START + state.dayCount + state.buckets.length - 1);
+    for (const e of emps) {
+      await sUpdate(`${state.monthTab}!${colLetter(DAY_START)}${e._row}:${lastCol}${e._row}`, [line]);
+    }
+    await loadGrid(state.month);
+    msg.innerHTML = `<span class="msg ok">${state.month} 기본근무 채움 · 직원 ${emps.length}명 (월~금 M / 토·일 /)</span>`;
+  } catch (e) { msg.innerHTML = '<span class="msg err">실패: ' + esc(e.message || e) + '</span>'; }
+}
 async function bootstrapSheet() {
   const msg = document.getElementById('syncmsg');
   if (!confirm('이 시트를 초기화합니다: `설정` 탭(기본 근무형태 25종) + 이번 달 탭을 생성합니다. 진행할까요?')) return;
@@ -648,6 +669,7 @@ document.getElementById('next').onclick = () => loadGrid(shiftMonth(state.month,
 document.getElementById('reload').onclick = async () => { meta = await loadMeta(); detected = detectFromTitles(); await loadGrid(state.month); };
 document.getElementById('changesheet').onclick = () => openSetup();
 document.getElementById('rollmonth').onclick = rollMonth;
+document.getElementById('filldefault').onclick = fillCurrentMonthDefault;
 document.getElementById('bootstrap').onclick = bootstrapSheet;
 
 // ── util ──────────────────────────────────────────────────
