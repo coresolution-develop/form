@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>근무표 (시트 직결)</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root {
+    --bg: #ffffff; --surface: #f7f7f5; --line: #e6e5e0; --line2: #d3d1c7;
+    --text: #2c2c2a; --muted: #6b6a64; --hint: #9a988f;
+    --accent: #185fa5; --weekend: #c0392b; --today: #fff7d6; --total-bg: #fdf7ec; --total-fg: #633806;
+    --ok: #2f7d32; --err: #b3261e; --radius: 8px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+         color: var(--text); background: var(--bg); font-size: 14px; }
+  header { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .org { font-size: 16px; font-weight: 600; }
+  .count { font-size: 12px; color: var(--muted); background: var(--surface); padding: 2px 8px; border-radius: var(--radius); }
+  nav { display: flex; gap: 4px; margin-left: auto; }
+  nav button { font: inherit; }
+  .tab { padding: 6px 12px; border: 1px solid var(--line); background: var(--bg); border-radius: var(--radius); cursor: pointer; color: var(--muted); }
+  .tab.active { background: var(--text); color: #fff; border-color: var(--text); }
+  main { padding: 18px 20px 60px; }
+  .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .toolbar .month { font-size: 15px; font-weight: 600; min-width: 110px; text-align: center; }
+  button.btn { font: inherit; padding: 6px 12px; border: 1px solid var(--line2); background: var(--bg); border-radius: var(--radius); cursor: pointer; }
+  button.btn:hover { background: var(--surface); }
+  button.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.btn:disabled { opacity: .5; cursor: not-allowed; }
+  .iconbtn { width: 32px; height: 32px; border: 1px solid var(--line2); background: var(--bg); border-radius: var(--radius); cursor: pointer; font-size: 15px; }
+  .gridwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+  table.grid { border-collapse: collapse; white-space: nowrap; font-size: 12px; }
+  table.grid th, table.grid td { border: 1px solid var(--line); text-align: center; height: 30px; }
+  table.grid thead th { background: var(--surface); font-weight: 600; padding: 3px 0; }
+  .stick { position: sticky; left: 0; z-index: 2; background: var(--bg); }
+  thead .stick { z-index: 3; background: var(--surface); }
+  .empcell { min-width: 120px; text-align: left; padding: 4px 10px; }
+  .empcell .nm { font-weight: 600; } .empcell .rk { color: var(--hint); font-size: 11px; margin-left: 4px; }
+  .daycol { width: 30px; }
+  .wknd { color: var(--weekend); }
+  .today { background: var(--today) !important; }
+  td.cell { cursor: pointer; }
+  td.cell .badge { display: inline-block; min-width: 22px; height: 22px; line-height: 22px; border-radius: 4px; font-weight: 600; padding: 0 3px; }
+  .totcol { width: 38px; background: var(--total-bg); color: var(--total-fg); font-weight: 600; }
+  thead .totcol { background: #f6ead2; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 2px 0; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 2px 8px; border-radius: 20px; border: 1px solid var(--line); }
+  .chip .sw { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--line2); }
+  .hint { color: var(--hint); font-size: 12px; margin: 8px 2px 0; }
+  #pop { position: absolute; z-index: 50; background: var(--bg); border: 1px solid var(--line2); border-radius: var(--radius);
+         box-shadow: 0 6px 24px rgba(0,0,0,.14); padding: 8px; display: none; max-width: 280px; }
+  #pop .opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; max-height: 220px; overflow-y: auto; }
+  #pop .opt { cursor: pointer; border: 1px solid var(--line); border-radius: 4px; padding: 4px 2px; text-align: center; font-size: 11px; }
+  #pop .opt b { display: block; font-size: 13px; }
+  #pop .opt:hover { outline: 2px solid var(--accent); }
+  #pop .row { display: flex; gap: 6px; margin-top: 8px; }
+  #pop input { font: inherit; flex: 1; padding: 5px 8px; border: 1px solid var(--line2); border-radius: 6px; min-width: 0; }
+  table.cfg { border-collapse: collapse; width: 100%; max-width: 860px; font-size: 13px; }
+  table.cfg th, table.cfg td { border-bottom: 1px solid var(--line); padding: 8px 8px; text-align: left; vertical-align: middle; }
+  table.cfg th { color: var(--muted); font-weight: 500; font-size: 12px; }
+  table.cfg input { font: inherit; padding: 4px 6px; border: 1px solid var(--line2); border-radius: 6px; }
+  .mono { font-family: ui-monospace, Menlo, monospace; }
+  .sw-lg { width: 24px; height: 18px; border-radius: 4px; border: 1px solid var(--line2); display: inline-block; vertical-align: -3px; }
+  table.cfg td.wt { text-align: center; } table.cfg td.wt input { width: 44px; text-align: center; padding: 4px 2px; }
+  .badge-prev { display:inline-block; min-width:24px; height:20px; line-height:20px; text-align:center; border-radius:4px; padding:0 5px; font-weight:600; border:1px solid var(--line); }
+  .colin { width: 96px; }
+  td.presets { white-space: nowrap; }
+  td.presets button { width:18px; height:18px; border-radius:4px; border:1px solid var(--line2); cursor:pointer; padding:0; margin:1px; vertical-align:middle; }
+  tr.newrow { background: #f1f7ff; }
+  .section-h { display: flex; align-items: center; gap: 10px; margin: 4px 0 14px; flex-wrap: wrap; }
+  .section-h h2 { font-size: 16px; margin: 0; font-weight: 600; }
+  .hidden { display: none; }
+  .msg { font-size: 12px; }
+  .msg.ok { color: var(--ok); } .msg.err { color: var(--err); }
+  /* 설정/로그인 오버레이 */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: flex; align-items: center; justify-content: center; z-index: 100; }
+  .panel { background: var(--bg); border-radius: 12px; padding: 24px; width: min(520px, 92vw); box-shadow: 0 12px 48px rgba(0,0,0,.2); }
+  .panel h1 { font-size: 18px; margin: 0 0 4px; }
+  .panel p { color: var(--muted); font-size: 13px; margin: 4px 0 16px; line-height: 1.5; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .field input { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line2); border-radius: 8px; }
+  .panel .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+  .panel a { color: var(--accent); }
+  .signin-bar { display: flex; align-items: center; gap: 8px; }
+</style>
+</head>
+<body>
+<header class="hidden" id="appbar">
+  <span class="org" id="org">근무표</span>
+  <span class="count" id="count"></span>
+  <nav>
+    <button class="tab active" data-view="grid">근무표</button>
+    <button class="tab" data-view="shift">근무형태 세팅</button>
+    <button class="tab" data-view="emp">직원</button>
+    <button class="btn" id="changesheet" title="다른 시트로 전환">⚙ 시트</button>
+  </nav>
+</header>
+
+<main class="hidden" id="appmain">
+  <!-- 그리드 -->
+  <section id="view-grid">
+    <div class="toolbar">
+      <button class="iconbtn" id="prev">◀</button>
+      <span class="month" id="month"></span>
+      <button class="iconbtn" id="next">▶</button>
+      <button class="btn primary" id="reload">↻ 새로고침</button>
+      <button class="btn" id="rollmonth">＋ 다음 달 준비</button>
+      <button class="btn" id="bootstrap" style="display:none">⚡ 시트 초기화</button>
+      <span class="hint" id="syncmsg"></span>
+    </div>
+    <div class="gridwrap"><table class="grid" id="gridtable"></table></div>
+    <div class="legend" id="legend"></div>
+    <p class="hint">셀을 클릭해 근무형태를 지정 · 우측 합계는 `설정` 탭 규칙으로 자동 계산 · 변경은 브라우저에서 시트에 바로 기록됩니다 (서버 없음).</p>
+  </section>
+
+  <!-- 근무형태 세팅 -->
+  <section id="view-shift" class="hidden">
+    <div class="section-h"><h2>근무형태 세팅</h2>
+      <button class="btn" id="addshift">+ 근무형태 추가</button>
+      <button class="btn primary" id="savesettings" title="`설정` 탭 전체 저장">↑ 시트에 저장</button>
+      <span class="hint" id="shiftmsg">코드 → 색 · 버킷별 가중치(빈칸=0). `설정` 탭과 동일 계약.</span>
+    </div>
+    <div style="overflow-x:auto;"><table class="cfg" id="shifttable" style="min-width:680px"></table></div>
+  </section>
+
+  <!-- 직원 -->
+  <section id="view-emp" class="hidden">
+    <div class="section-h"><h2>직원 (이 달 탭)</h2>
+      <button class="btn" id="addemp">+ 직원 추가</button>
+      <span class="hint" id="empmsg"></span>
+    </div>
+    <table class="cfg" id="emptable"></table>
+  </section>
+</main>
+
+<div id="pop"></div>
+
+<!-- 설정/로그인 오버레이 -->
+<div class="overlay" id="setup">
+  <div class="panel">
+    <h1>시트 직결 근무표</h1>
+    <p>서버 없이 브라우저에서 Google 시트를 직접 읽고 씁니다. Google Cloud의 <b>OAuth 클라이언트 ID</b>(웹 애플리케이션)와 대상 <b>시트</b>가 필요합니다. 설정 방법은 <span class="mono">README.md</span> 참고.</p>
+    <div class="field">
+      <label>OAuth 클라이언트 ID</label>
+      <input id="in-client" class="mono" placeholder="xxxxxxxx.apps.googleusercontent.com" />
+    </div>
+    <div class="field">
+      <label>스프레드시트 ID 또는 URL</label>
+      <input id="in-sheet" class="mono" placeholder="https://docs.google.com/spreadsheets/d/<ID>/edit 또는 <ID>" />
+    </div>
+    <div class="signin-bar">
+      <button class="btn primary" id="connect">Google 로그인 + 연결</button>
+      <span class="msg" id="setupmsg"></span>
+    </div>
+    <p style="margin-top:16px">이 값들은 이 브라우저(localStorage)에만 저장됩니다. OAuth 클라이언트 ID는 비밀이 아니며, 보안은 승인된 자바스크립트 원본(origin)으로 보호됩니다.</p>
+  </div>
+</div>
+
+<script>
+const SHEETS = 'https://sheets.googleapis.com/v4/spreadsheets';
+const SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
+const TODAY = new Date().toISOString().slice(0, 10);
+
+// ── 설정 (localStorage) ───────────────────────────────────
+let cfg = { clientId: localStorage.getItem('sw_clientId') || '', sheetId: localStorage.getItem('sw_sheetId') || '' };
+function parseSheetId(s) {
+  s = (s || '').trim();
+  const m = s.match(/\/d\/([a-zA-Z0-9-_]+)/);
+  return m ? m[1] : s;
+}
+function saveCfg(clientId, sheetId) {
+  cfg = { clientId: clientId.trim(), sheetId: parseSheetId(sheetId) };
+  localStorage.setItem('sw_clientId', cfg.clientId);
+  localStorage.setItem('sw_sheetId', cfg.sheetId);
+}
+
+// ── OAuth (Google Identity Services) ──────────────────────
+let token = null, tokenClient = null;
+async function signIn() {
+  if (!tokenClient) {
+    if (!window.google || !google.accounts || !google.accounts.oauth2)
+      throw new Error('Google 로그인 스크립트 로딩 중입니다. 잠시 후 다시 시도하세요.');
+    tokenClient = google.accounts.oauth2.initTokenClient({ client_id: cfg.clientId, scope: SCOPE, callback: () => {} });
+  }
+  token = await new Promise((resolve, reject) => {
+    tokenClient.callback = (r) => (r && r.error ? reject(new Error(r.error)) : resolve(r.access_token));
+    try { tokenClient.requestAccessToken({ prompt: '' }); } catch (e) { reject(e); }
+  });
+  return token;
+}
+
+// ── Sheets API (토큰 자동 갱신 1회 재시도) ────────────────
+async function sFetch(url, opt = {}, _retry = false) {
+  if (!token) await signIn();
+  const r = await fetch(url, { ...opt, headers: { ...(opt.headers || {}), Authorization: 'Bearer ' + token } });
+  if (r.status === 401 && !_retry) { token = null; await signIn(); return sFetch(url, opt, true); }
+  if (!r.ok) throw new Error(r.status + ' ' + (await r.text()).slice(0, 180));
+  return r;
+}
+const enc = encodeURIComponent;
+async function sGet(range) { return (await (await sFetch(`${SHEETS}/${cfg.sheetId}/values/${enc(range)}`)).json()).values || []; }
+async function sUpdate(range, values) {
+  return (await sFetch(`${SHEETS}/${cfg.sheetId}/values/${enc(range)}?valueInputOption=RAW`,
+    { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ values }) })).json();
+}
+async function sAppend(range, values) {
+  return (await sFetch(`${SHEETS}/${cfg.sheetId}/values/${enc(range)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ values }) })).json();
+}
+async function sClear(range) {
+  return (await sFetch(`${SHEETS}/${cfg.sheetId}/values/${enc(range)}:clear`, { method: 'POST' })).json();
+}
+async function sBatch(requests) {
+  return (await sFetch(`${SHEETS}/${cfg.sheetId}:batchUpdate`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requests }) })).json();
+}
+async function loadMeta() {
+  const d = await (await sFetch(`${SHEETS}/${cfg.sheetId}?fields=properties.title,sheets.properties(title,sheetId)`)).json();
+  const idByTitle = {};
+  (d.sheets || []).forEach((s) => { idByTitle[s.properties.title] = s.properties.sheetId; });
+  return { title: (d.properties && d.properties.title) || '근무표', idByTitle };
+}
+
+// ── 시트 계약 / 열 상수 ───────────────────────────────────
+const COL_ID = 1, COL_NAME = 2, COL_RANK = 3, DAY_START = 4; // A B C D(=1일)
+const SET_BUCKET_START = 5; // 설정 탭 E.. = 버킷 가중치
+function colLetter(n) { let s = ''; while (n > 0) { const r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = Math.floor((n - 1) / 26); } return s; }
+function pad(n) { return String(n).padStart(2, '0'); }
+function daysInMonth(ym) { const [y, m] = ym.split('-').map(Number); return new Date(y, m, 0).getDate(); }
+function monthDays(ym) {
+  const [y, m] = ym.split('-').map(Number), n = daysInMonth(ym), DOW = ['일', '월', '화', '수', '목', '금', '토'], out = [];
+  for (let d = 1; d <= n; d++) {
+    const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+    out.push({ day: d, iso: `${y}-${pad(m)}-${pad(d)}`, weekend: dow === 0 || dow === 6, dowLabel: DOW[dow] });
+  }
+  return out;
+}
+function shiftMonth(ym, delta) { let [y, m] = ym.split('-').map(Number); m += delta; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; } return y + '-' + pad(m); }
+function thisMonth() { return TODAY.slice(0, 7); }
+
+// ── 기본 시드 (서버 seed.data.ts 포팅) — 빈 시트 초기화용 ──
+// 합계 열 라벨 = [M, HD, /(OFF), Y]. SEED_SHIFTS: [code, label, bg, fg, wM, wHD, wOFF, wY] (0 → 빈칸)
+const SEED_BUCKETS = ['M', 'HD', '/', 'Y'];
+const _C = {
+  none: ['transparent', ''], blue: ['#E6F1FB', '#0C447C'], gray: ['#F1EFE8', '#5F5E5A'],
+  green: ['#EAF3DE', '#27500A'], amber: ['#FAEEDA', '#633806'], teal: ['#E1F5EE', '#0F6E56'],
+  red: ['#FCEBEB', '#791F1F'], pink: ['#FBEAF0', '#72243E'], purple: ['#EEEDFE', '#3C3489'], coral: ['#FAECE7', '#712B13'],
+};
+const SEED_SHIFTS = [
+  ['M', '평일근무', ..._C.none, 1, 0, 0, 0],
+  ['M2', '평일근무 후 초과(2h)', ..._C.blue, 1, 0, 0, 0],
+  ['M4', '평일근무 후 초과(4h)', ..._C.blue, 1, 0, 0, 0],
+  ['M+', '평일근무 후 초과', ..._C.blue, 1, 0, 0, 0],
+  ['M5', '근무 후 초과(5h)', ..._C.blue, 0, 0, 0, 0],
+  ['M7', '근무 후 초과(7h)', ..._C.blue, 0, 0, 0, 0],
+  ['M9', '근무 후 초과(9h)', ..._C.blue, 0, 0, 0, 0],
+  ['MO', '근무 후 초과', ..._C.blue, 0, 0, 0, 0],
+  ['/M', '오전 반차', ..._C.gray, 0.5, 0, 0, 0.5],
+  ['M/', '오후 반차', ..._C.gray, 0.5, 0, 0, 0.5],
+  ['/M/Q', '오전 반반차', ..._C.green, 0, 0, 0, 0.5],
+  ['M//Q', '오후 반반차', ..._C.green, 0, 0, 0, 0.5],
+  ['/', 'OFF', ..._C.gray, 0, 0, 1, 0],
+  ['Y', '자기계발연차', ..._C.green, 0, 0, 0, 1],
+  ['DY', '대체 연차', ..._C.amber, 0, 0, 0, 0],
+  ['DY/', '오전 대체휴무 후 근무', ..._C.amber, 0, 0, 0, 0],
+  ['/DY', '근무 후 오후 대체휴무', ..._C.amber, 0, 0, 0, 0],
+  ['H', '공가', ..._C.teal, 0, 0, 0, 0],
+  ['A', '병가', ..._C.red, 0, 0, 0, 0],
+  ['B', '출산휴가', ..._C.pink, 0, 0, 0, 0],
+  ['C', '육아휴직', ..._C.pink, 0, 0, 0, 0],
+  ['S', '교육', ..._C.purple, 0, 0, 0, 0],
+  ['F', '경조', ..._C.coral, 0, 0, 0, 0],
+  ['HD/A', '토요일 오전근무', ..._C.purple, 0, 1, 0, 0],
+  ['HD/P', '토요일 오후근무', ..._C.purple, 0, 1, 0, 0],
+];
+
+// ── 시트 → 모델 (서버의 getGrid 와 동일 형태로 조립) ──────
+let meta = { title: '근무표', idByTitle: {} };
+let detected = { prefix: '근무표', months: [], settingsTab: '설정' };
+let state = { month: null, monthTab: null, grid: null, shiftTypes: [], buckets: [], dayCount: 0 };
+
+function detectFromTitles() {
+  const titles = Object.keys(meta.idByTitle);
+  const re = /^(.+)-(\d{4}-\d{2})$/, counts = {};
+  titles.forEach((t) => { const m = re.exec(t); if (m) counts[m[1]] = (counts[m[1]] || 0) + 1; });
+  const prefix = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || '근무표';
+  const months = titles.map((t) => re.exec(t)).filter((m) => m && m[1] === prefix).map((m) => m[2]).sort();
+  const settingsTab = titles.includes('설정') ? '설정' : (titles.find((t) => /설정|setting/i.test(t)) || '설정');
+  return { prefix, months, settingsTab };
+}
+
+async function readSettings() {
+  if (!(detected.settingsTab in meta.idByTitle)) return { buckets: [], shiftTypes: [] };
+  const rows = await sGet(`${detected.settingsTab}!A1:Z`);
+  if (!rows.length) return { buckets: [], shiftTypes: [] };
+  const header = rows[0];
+  const buckets = header.slice(SET_BUCKET_START - 1).map((l) => String(l).trim()).filter((l) => l !== '').map((l) => ({ key: l, label: l }));
+  const shiftTypes = rows.slice(1).filter((r) => String(r[0] ?? '').trim() !== '').map((r, i) => {
+    const contributions = buckets.map((b, bi) => {
+      const v = parseFloat(r[SET_BUCKET_START - 1 + bi]); return { bucket: b.key, weight: isNaN(v) ? 0 : v };
+    }).filter((c) => c.weight !== 0);
+    return {
+      code: String(r[0]).trim(), label: String(r[1] ?? '').trim(),
+      bgColor: String(r[2] ?? '').trim() || 'transparent', fgColor: String(r[3] ?? '').trim(),
+      sortOrder: i, contributions,
+    };
+  });
+  return { buckets, shiftTypes };
+}
+
+function typeMap() { const m = {}; for (const t of state.shiftTypes) m[t.code] = t.contributions; return m; }
+function computeTotals(codes) {
+  const tMap = typeMap(), totals = {}; for (const b of state.buckets) totals[b.key] = 0;
+  for (const code of codes) for (const c of (tMap[code] || [])) totals[c.bucket] = (totals[c.bucket] || 0) + c.weight;
+  return totals;
+}
+
+async function readGrid(month) {
+  const tab = `${detected.prefix}-${month}`;
+  const exists = tab in meta.idByTitle;
+  const n = daysInMonth(month);
+  let employees = [];
+  if (exists) {
+    const lastCol = colLetter(DAY_START - 1 + n + state.buckets.length + 2);
+    const rows = await sGet(`${tab}!A3:${lastCol}`);
+    employees = rows.map((r, i) => ({ row: i + 3, raw: r }))
+      .filter((x) => String(x.raw[COL_NAME - 1] ?? '').trim() !== '')
+      .map((x) => {
+        const cells = {};
+        for (let d = 0; d < n; d++) { const code = String(x.raw[DAY_START - 1 + d] ?? '').trim(); if (code) cells[`${month}-${pad(d + 1)}`] = code; }
+        return { id: String(x.raw[COL_ID - 1] ?? '').trim() || `r${x.row}`, _row: x.row, name: String(x.raw[COL_NAME - 1] ?? '').trim(), rank: String(x.raw[COL_RANK - 1] ?? '').trim() || null, dept: null, cells, totals: computeTotals(Object.values(cells)) };
+      });
+  }
+  return { month, monthTab: tab, exists, employees, dayCount: n };
+}
+
+async function loadGrid(month) {
+  const msg = document.getElementById('syncmsg');
+  try {
+    msg.textContent = '시트 읽는 중…';
+    const s = await readSettings();
+    state.buckets = s.buckets; state.shiftTypes = s.shiftTypes;
+    const grid = await readGrid(month);
+    state.month = month; state.monthTab = grid.monthTab; state.dayCount = grid.dayCount;
+    state.grid = { month, orgName: meta.title, days: monthDays(month), buckets: s.buckets, shiftTypes: s.shiftTypes, employees: grid.employees };
+    document.getElementById('org').textContent = meta.title;
+    document.getElementById('count').textContent = grid.exists ? grid.employees.length + '명' : '탭 없음';
+    document.getElementById('month').textContent = month.replace('-', '년 ') + '월' + (grid.exists ? '' : ' (탭 없음)');
+    renderGrid(); renderLegend();
+    msg.textContent = grid.exists ? '' : `'${grid.monthTab}' 탭이 없습니다.`;
+  } catch (e) { msg.innerHTML = '<span class="msg err">읽기 실패: ' + esc(e.message || e) + '</span>'; }
+}
+
+// ── 렌더 (기존 UI 재사용) ─────────────────────────────────
+function typeOf(code) { return state.shiftTypes.find((t) => t.code === code); }
+function badge(code) {
+  if (!code) return '';
+  const t = typeOf(code);
+  const bg = t && t.bgColor !== 'transparent' ? t.bgColor : 'transparent';
+  const fg = t && t.fgColor ? t.fgColor : 'inherit';
+  const fw = bg === 'transparent' ? '400' : '600';
+  return `<span class="badge" style="background:${bg};color:${fg};font-weight:${fw}">${esc(code)}</span>`;
+}
+function renderGrid() {
+  const g = state.grid, days = g.days, buckets = g.buckets;
+  let h = '<thead><tr><th class="stick empcell">직원</th>';
+  for (const d of days) h += `<th class="daycol ${d.weekend ? 'wknd' : ''} ${d.iso === TODAY ? 'today' : ''}">${d.day}</th>`;
+  for (const b of buckets) h += `<th class="totcol">${esc(b.label)}</th>`;
+  h += '</tr><tr><th class="stick empcell"></th>';
+  for (const d of days) h += `<th class="daycol ${d.weekend ? 'wknd' : ''} ${d.iso === TODAY ? 'today' : ''}" style="font-weight:400;font-size:11px">${d.dowLabel}</th>`;
+  for (const b of buckets) h += '<th class="totcol"></th>';
+  h += '</tr></thead><tbody>';
+  for (const e of g.employees) {
+    h += `<tr data-emp="${esc(e.id)}">`;
+    h += `<td class="stick empcell"><span class="nm">${esc(e.name)}</span><span class="rk">${esc(e.rank || '')}</span></td>`;
+    for (const d of days) {
+      const code = e.cells[d.iso] || '';
+      h += `<td class="cell ${d.iso === TODAY ? 'today' : ''}" data-emp="${esc(e.id)}" data-date="${d.iso}">${badge(code)}</td>`;
+    }
+    for (const b of buckets) h += `<td class="totcol" data-tot="${esc(b.key)}">${fmt(e.totals[b.key])}</td>`;
+    h += '</tr>';
+  }
+  h += '</tbody>';
+  document.getElementById('gridtable').innerHTML = h;
+}
+function renderLegend() {
+  document.getElementById('legend').innerHTML = state.shiftTypes
+    .filter((t) => t.bgColor !== 'transparent')
+    .map((t) => `<span class="chip"><span class="sw" style="background:${t.bgColor}"></span>${esc(t.code)} ${esc(t.label)}</span>`)
+    .join('');
+}
+
+// ── 셀 편집 팝오버 ────────────────────────────────────────
+const pop = document.getElementById('pop');
+let popCell = null;
+document.addEventListener('click', (ev) => {
+  const cell = ev.target.closest('td.cell');
+  if (cell) { openPop(cell); ev.stopPropagation(); return; }
+  if (!ev.target.closest('#pop')) pop.style.display = 'none';
+});
+function openPop(cell) {
+  popCell = cell;
+  const cur = (cell.textContent || '').trim();
+  let h = '<div class="opts">';
+  h += `<div class="opt" data-code="" style="grid-column:span 4;color:#888">지우기 (빈칸)</div>`;
+  for (const t of state.shiftTypes) {
+    const bg = t.bgColor === 'transparent' ? '#fff' : t.bgColor, fg = t.fgColor || '#2c2c2a';
+    h += `<div class="opt" data-code="${esc(t.code)}" style="background:${bg};color:${fg}" title="${esc(t.label)}"><b>${esc(t.code)}</b>${esc(t.label)}</div>`;
+  }
+  h += '</div><div class="row"><input id="popinput" placeholder="직접 입력" value="' + esc(cur) + '"><button class="btn" id="popok">확인</button></div>';
+  pop.innerHTML = h;
+  const r = cell.getBoundingClientRect();
+  pop.style.left = Math.min(r.left + window.scrollX, window.scrollX + window.innerWidth - 290) + 'px';
+  pop.style.top = (r.bottom + window.scrollY + 4) + 'px';
+  pop.style.display = 'block';
+  pop.querySelectorAll('.opt').forEach((o) => (o.onclick = () => setCell(o.dataset.code)));
+  pop.querySelector('#popok').onclick = () => setCell(pop.querySelector('#popinput').value.trim());
+  pop.querySelector('#popinput').onkeydown = (e) => { if (e.key === 'Enter') setCell(e.target.value.trim()); };
+}
+async function setCell(code) {
+  const empId = popCell.dataset.emp, date = popCell.dataset.date;
+  pop.style.display = 'none';
+  popCell.innerHTML = badge(code);
+  const e = state.grid.employees.find((x) => x.id === empId);
+  if (code) e.cells[date] = code; else delete e.cells[date];
+  try {
+    const day = Number(date.slice(8, 10));
+    await sUpdate(`${state.monthTab}!${colLetter(DAY_START - 1 + day)}${e._row}`, [[code]]);
+    e.totals = computeTotals(Object.values(e.cells));
+    const startCol = colLetter(DAY_START + state.dayCount);
+    const arr = state.buckets.map((b) => e.totals[b.key]);
+    if (arr.length) await sUpdate(`${state.monthTab}!${startCol}${e._row}:${colLetter(DAY_START + state.dayCount + arr.length - 1)}${e._row}`, [arr]);
+    const row = document.querySelector(`tr[data-emp="${cssesc(empId)}"]`);
+    for (const b of state.buckets) { const c = row.querySelector(`td[data-tot="${cssesc(b.key)}"]`); if (c) c.textContent = fmt(e.totals[b.key]); }
+  } catch (err) { alert('저장 실패: ' + (err.message || err)); }
+}
+
+// ── 근무형태 세팅 (시트 직접 read/write) ──────────────────
+const PRESETS = [
+  ['투명', 'transparent', ''], ['파랑', '#E6F1FB', '#0C447C'], ['초록', '#EAF3DE', '#27500A'],
+  ['앰버', '#FAEEDA', '#633806'], ['회색', '#F1EFE8', '#5F5E5A'], ['청록', '#E1F5EE', '#0F6E56'],
+  ['보라', '#EEEDFE', '#3C3489'], ['빨강', '#FCEBEB', '#791F1F'], ['분홍', '#FBEAF0', '#72243E'], ['코랄', '#FAECE7', '#712B13'],
+];
+function shiftRowHtml(t, isNew) {
+  const codeCell = isNew ? `<input data-f="code" placeholder="코드" class="mono" style="width:72px">` : `<span class="mono">${esc(t.code)}</span>`;
+  const wts = state.buckets.map((b) => {
+    const c = (t.contributions || []).find((x) => x.bucket === b.key);
+    return `<td class="wt"><input data-w="${esc(b.key)}" type="number" step="0.5" value="${c ? c.weight : ''}"></td>`;
+  }).join('');
+  const bg = t.bgColor || 'transparent';
+  return `<tr class="${isNew ? 'newrow' : ''}" data-code="${isNew ? '' : esc(t.code)}" data-sort="${t.sortOrder ?? 0}">
+    <td>${codeCell}</td>
+    <td><input data-f="label" value="${esc(t.label || '')}" style="width:128px"></td>
+    <td><span class="badge-prev prev" style="background:${bg === 'transparent' ? '#fff' : bg};color:${t.fgColor || '#2c2c2a'}">${esc(t.code || '?')}</span></td>
+    <td><input data-f="bgColor" class="colin mono" value="${esc(t.bgColor || 'transparent')}"></td>
+    <td><input data-f="fgColor" class="colin mono" value="${esc(t.fgColor || '')}"></td>
+    ${wts}
+    <td class="presets"></td>
+    <td style="white-space:nowrap"><button class="btn del">삭제</button></td>
+  </tr>`;
+}
+function renderShiftTypes() {
+  const buckets = state.buckets;
+  const head = '<thead><tr><th>코드</th><th>라벨</th><th>배지</th><th>배경</th><th>글자</th>'
+    + buckets.map((b) => `<th class="wt" title="가중치">${esc(b.label)}</th>`).join('') + '<th>프리셋</th><th></th></tr></thead>';
+  const tbl = document.getElementById('shifttable');
+  tbl.innerHTML = head + '<tbody>' + state.shiftTypes.map((t) => shiftRowHtml(t, false)).join('') + '</tbody>';
+  tbl.querySelectorAll('tbody tr').forEach(wireShiftRow);
+}
+function wireShiftRow(tr) {
+  const prev = tr.querySelector('.prev');
+  const upd = () => {
+    const bg = (tr.querySelector('[data-f="bgColor"]').value || 'transparent').trim();
+    const fg = (tr.querySelector('[data-f="fgColor"]').value || '').trim();
+    const codeEl = tr.querySelector('[data-f="code"]');
+    const code = codeEl ? codeEl.value : tr.dataset.code;
+    prev.style.background = bg === 'transparent' ? '#fff' : bg; prev.style.color = fg || '#2c2c2a'; prev.textContent = code || '?';
+  };
+  tr.querySelectorAll('input').forEach((i) => i.addEventListener('input', upd));
+  const pc = tr.querySelector('.presets');
+  pc.innerHTML = PRESETS.map((p, i) => `<button title="${p[0]}" data-i="${i}" style="background:${p[1] === 'transparent' ? '#fff' : p[1]}"></button>`).join('');
+  pc.querySelectorAll('button').forEach((b) => (b.onclick = () => {
+    const p = PRESETS[+b.dataset.i];
+    tr.querySelector('[data-f="bgColor"]').value = p[1]; tr.querySelector('[data-f="fgColor"]').value = p[2]; upd();
+  }));
+  tr.querySelector('.del').onclick = () => { tr.remove(); };
+}
+document.getElementById('addshift').onclick = () => {
+  let tbody = document.querySelector('#shifttable tbody');
+  if (!tbody) { renderShiftTypes(); tbody = document.querySelector('#shifttable tbody'); }
+  const nextSort = Math.max(0, ...state.shiftTypes.map((t) => t.sortOrder || 0)) + 1;
+  tbody.insertAdjacentHTML('afterbegin', shiftRowHtml({ code: '', label: '', bgColor: 'transparent', fgColor: '', contributions: [], sortOrder: nextSort }, true));
+  wireShiftRow(tbody.querySelector('tr'));
+};
+// 화면의 모든 행 → `설정` 탭 전체 재기록 (서버 settings-to-sheet 와 동일)
+async function saveSettings() {
+  const trs = [...document.querySelectorAll('#shifttable tbody tr')];
+  const buckets = state.buckets;
+  const rows = [];
+  for (const tr of trs) {
+    const codeEl = tr.querySelector('[data-f="code"]');
+    const code = (codeEl ? codeEl.value : tr.dataset.code).trim();
+    if (!code) continue;
+    const label = tr.querySelector('[data-f="label"]').value.trim() || code;
+    const bg = (tr.querySelector('[data-f="bgColor"]').value || 'transparent').trim();
+    const fg = (tr.querySelector('[data-f="fgColor"]').value || '').trim();
+    const wts = buckets.map((b) => { const v = parseFloat(tr.querySelector(`[data-w="${cssesc(b.key)}"]`).value); return isNaN(v) ? '' : v; });
+    rows.push([code, label, bg, fg, ...wts]);
+  }
+  const header = ['code', 'label', 'bg', 'fg', ...buckets.map((b) => b.label)];
+  const block = [header, ...rows];
+  const msg = document.getElementById('shiftmsg');
+  try {
+    msg.textContent = '저장 중…';
+    await sUpdate(`${detected.settingsTab}!A1`, block);
+    const lastCol = colLetter(SET_BUCKET_START - 1 + buckets.length);
+    await sClear(`${detected.settingsTab}!A${block.length + 1}:${lastCol}1000`);
+    // 메모리 갱신 + 그리드 재계산
+    const s = await readSettings(); state.buckets = s.buckets; state.shiftTypes = s.shiftTypes;
+    renderShiftTypes();
+    if (state.grid) { for (const e of state.grid.employees) e.totals = computeTotals(Object.values(e.cells)); state.grid.buckets = s.buckets; state.grid.shiftTypes = s.shiftTypes; renderGrid(); renderLegend(); }
+    msg.innerHTML = '<span class="msg ok">`설정` 탭에 저장됨</span>';
+  } catch (e) { msg.innerHTML = '<span class="msg err">저장 실패: ' + esc(e.message || e) + '</span>'; }
+}
+document.getElementById('savesettings').onclick = saveSettings;
+
+// ── 직원 관리 (이 달 탭의 행) ─────────────────────────────
+function renderEmployees() {
+  const emps = (state.grid && state.grid.employees) || [];
+  let h = '<thead><tr><th>성명</th><th>직급</th><th></th></tr></thead><tbody>';
+  for (const e of emps) {
+    h += `<tr data-emp="${esc(e.id)}" data-row="${e._row}">
+      <td><input data-f="name" value="${esc(e.name)}"></td>
+      <td><input data-f="rank" value="${esc(e.rank || '')}" style="width:120px"></td>
+      <td><button class="btn save">저장</button> <button class="btn del">삭제</button></td>
+    </tr>`;
+  }
+  h += '</tbody>';
+  const tbl = document.getElementById('emptable'); tbl.innerHTML = h;
+  tbl.querySelectorAll('tr[data-emp]').forEach((tr) => {
+    const row = Number(tr.dataset.row);
+    tr.querySelector('.save').onclick = async () => {
+      const name = tr.querySelector('[data-f="name"]').value, rank = tr.querySelector('[data-f="rank"]').value;
+      try { await sUpdate(`${state.monthTab}!${colLetter(COL_NAME)}${row}:${colLetter(COL_RANK)}${row}`, [[name, rank]]); flash(tr.querySelector('.save')); }
+      catch (e) { alert('저장 실패: ' + (e.message || e)); }
+    };
+    tr.querySelector('.del').onclick = async () => {
+      if (!confirm('이 달 탭에서 이 직원 행을 삭제할까요?')) return;
+      const gid = meta.idByTitle[state.monthTab];
+      try {
+        await sBatch([{ deleteDimension: { range: { sheetId: gid, dimension: 'ROWS', startIndex: row - 1, endIndex: row } } }]);
+        await loadGrid(state.month); renderEmployees();
+      } catch (e) { alert('삭제 실패: ' + (e.message || e)); }
+    };
+  });
+}
+document.getElementById('addemp').onclick = async () => {
+  if (!(state.monthTab in meta.idByTitle)) return alert(`'${state.monthTab}' 탭이 없어 추가할 수 없습니다.`);
+  const name = prompt('직원 성명'); if (!name) return;
+  const rank = prompt('직급 (없으면 빈칸)') || '';
+  const id = 'e' + Date.now().toString(36);
+  const blanks = Array(state.dayCount).fill('').concat(state.buckets.map(() => ''));
+  try { await sAppend(`${state.monthTab}!A3`, [[id, name, rank, ...blanks]]); await loadGrid(state.month); renderEmployees(); }
+  catch (e) { alert('추가 실패: ' + (e.message || e)); }
+};
+
+// ── 탭 생성 / 다음 달 준비 / 빈 시트 초기화 ────────────────
+async function createTab(title) {
+  if (title in meta.idByTitle) return false;
+  const res = await sBatch([{ addSheet: { properties: { title } } }]);
+  const props = res.replies && res.replies[0] && res.replies[0].addSheet && res.replies[0].addSheet.properties;
+  if (props) meta.idByTitle[title] = props.sheetId;
+  return true;
+}
+async function writeMonthTab(month, employees) {
+  const tab = `${detected.prefix}-${month}`;
+  await createTab(tab);
+  const days = monthDays(month);
+  const header = ['empId', '성명', '직급', ...days.map((d) => d.day), ...state.buckets.map((b) => b.label)];
+  const blanks = days.map(() => '').concat(state.buckets.map(() => ''));
+  const rows = (employees || []).map((e) => [e.id || ('e' + Date.now().toString(36)), e.name, e.rank || '', ...blanks]);
+  await sUpdate(`${tab}!A1`, [[month]]);                 // 월 앵커 (RAW 텍스트)
+  await sUpdate(`${tab}!A2`, [header, ...rows]);          // 헤더 + 명부(코드/합계 공란)
+  return tab;
+}
+async function rollMonth() {
+  if (!state.month) return;
+  const to = shiftMonth(state.month, +1);
+  const tab = `${detected.prefix}-${to}`;
+  const msg = document.getElementById('syncmsg');
+  if (tab in meta.idByTitle) {
+    if (confirm(`${to} 탭이 이미 있습니다. 그 탭으로 이동할까요? (덮어쓰지 않음)`)) await loadGrid(to);
+    return;
+  }
+  if (!confirm(`${to} 탭을 만들고 현재 직원 명부를 채웁니다 (코드는 빈칸). 진행할까요?`)) return;
+  const emps = (state.grid && state.grid.employees) || [];
+  try {
+    msg.textContent = '다음 달 준비 중…';
+    await writeMonthTab(to, emps);
+    meta = await loadMeta(); detected = detectFromTitles();
+    document.getElementById('bootstrap').style.display = 'none';
+    await loadGrid(to);
+    msg.innerHTML = `<span class="msg ok">${to} 탭 준비 완료 · 직원 ${emps.length}명</span>`;
+  } catch (e) { msg.innerHTML = '<span class="msg err">실패: ' + esc(e.message || e) + '</span>'; }
+}
+async function bootstrapSheet() {
+  const msg = document.getElementById('syncmsg');
+  if (!confirm('이 시트를 초기화합니다: `설정` 탭(기본 근무형태 25종) + 이번 달 탭을 생성합니다. 진행할까요?')) return;
+  try {
+    msg.textContent = '초기화 중…';
+    await createTab(detected.settingsTab);
+    const header = ['code', 'label', 'bg', 'fg', ...SEED_BUCKETS];
+    const rows = SEED_SHIFTS.map((s) => [s[0], s[1], s[2], s[3], ...s.slice(4).map((w) => (w === 0 ? '' : w))]);
+    await sUpdate(`${detected.settingsTab}!A1`, [header, ...rows]);
+    const st = await readSettings(); state.buckets = st.buckets; state.shiftTypes = st.shiftTypes;
+    const month = thisMonth();
+    await writeMonthTab(month, []);
+    meta = await loadMeta(); detected = detectFromTitles();
+    document.getElementById('bootstrap').style.display = 'none';
+    await loadGrid(month);
+    msg.innerHTML = `<span class="msg ok">초기화 완료 · '${detected.settingsTab}' + '${detected.prefix}-${month}' 생성</span>`;
+  } catch (e) { msg.innerHTML = '<span class="msg err">초기화 실패: ' + esc(e.message || e) + '</span>'; }
+}
+
+// ── 탭 전환 / 월 이동 / 새로고침 ──────────────────────────
+document.querySelectorAll('.tab').forEach((t) => (t.onclick = () => {
+  document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x === t));
+  for (const v of ['grid', 'shift', 'emp']) document.getElementById('view-' + v).classList.toggle('hidden', v !== t.dataset.view);
+  if (t.dataset.view === 'shift') renderShiftTypes();
+  if (t.dataset.view === 'emp') renderEmployees();
+}));
+document.getElementById('prev').onclick = () => loadGrid(shiftMonth(state.month, -1));
+document.getElementById('next').onclick = () => loadGrid(shiftMonth(state.month, +1));
+document.getElementById('reload').onclick = async () => { meta = await loadMeta(); detected = detectFromTitles(); await loadGrid(state.month); };
+document.getElementById('changesheet').onclick = () => openSetup();
+document.getElementById('rollmonth').onclick = rollMonth;
+document.getElementById('bootstrap').onclick = bootstrapSheet;
+
+// ── util ──────────────────────────────────────────────────
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function cssesc(s) { return String(s).replace(/["\\]/g, '\\$&'); }
+function fmt(n) { return (n == null ? 0 : n).toFixed(1); }
+function flash(btn) { const t = btn.textContent; btn.textContent = '✓'; setTimeout(() => (btn.textContent = t), 800); }
+
+// ── 부트스트랩 / 설정 오버레이 ────────────────────────────
+function openSetup() {
+  document.getElementById('in-client').value = cfg.clientId;
+  document.getElementById('in-sheet').value = cfg.sheetId;
+  document.getElementById('setupmsg').textContent = '';
+  document.getElementById('setup').classList.remove('hidden');
+}
+function closeSetup() { document.getElementById('setup').classList.add('hidden'); }
+document.getElementById('connect').onclick = async () => {
+  const clientId = document.getElementById('in-client').value.trim();
+  const sheetId = document.getElementById('in-sheet').value.trim();
+  const msg = document.getElementById('setupmsg');
+  if (!clientId || !sheetId) { msg.innerHTML = '<span class="msg err">두 값 모두 입력하세요.</span>'; return; }
+  saveCfg(clientId, sheetId);
+  tokenClient = null; token = null;
+  try {
+    msg.textContent = 'Google 로그인 중…';
+    await signIn();
+    msg.textContent = '시트 여는 중…';
+    await start();
+    closeSetup();
+  } catch (e) { msg.innerHTML = '<span class="msg err">연결 실패: ' + esc(e.message || e) + '</span>'; }
+};
+
+async function start() {
+  meta = await loadMeta();
+  detected = detectFromTitles();
+  document.getElementById('appbar').classList.remove('hidden');
+  document.getElementById('appmain').classList.remove('hidden');
+  const hasSettings = detected.settingsTab in meta.idByTitle;
+  const empty = !hasSettings || detected.months.length === 0;
+  document.getElementById('bootstrap').style.display = empty ? '' : 'none';
+  const month = detected.months.includes(thisMonth()) ? thisMonth() : (detected.months[detected.months.length - 1] || thisMonth());
+  await loadGrid(month);
+  if (empty) document.getElementById('syncmsg').innerHTML = '<span class="msg">빈 시트로 보입니다 — <b>⚡ 시트 초기화</b>로 `설정` 탭과 이번 달 탭을 만들 수 있어요.</span>';
+}
+
+// 시작: 설정 있으면 오버레이만 띄워 "로그인+연결" 대기(토큰은 사용자 제스처로 요청).
+if (cfg.clientId && cfg.sheetId) openSetup(); else openSetup();
+</script>
+</body>
+</html>
