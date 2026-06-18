@@ -1,0 +1,55 @@
+name: sheet-web (serverless) CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sheet-web/**'
+      - '.github/workflows/sheet-web.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'sheet-web/**'
+      - '.github/workflows/sheet-web.yml'
+
+concurrency:
+  group: sheet-web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 빌드 단계 없음(정적 파일) — 번들만 만든다. GitHub 호스티드.
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pack
+        working-directory: sheet-web
+        run: |
+          tar -czf sheet-bundle.tar.gz index.html README.md
+          cp deploy/deploy-sheet.sh ./deploy-sheet.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sheet-bundle
+          path: |
+            sheet-web/sheet-bundle.tar.gz
+            sheet-web/deploy-sheet.sh
+          retention-days: 1
+
+  # 배포는 서버에 설치된 self-hosted 러너 (SSH/방화벽 불필요)
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, linux]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: sheet-bundle
+          path: bundle
+      - name: Deploy
+        run: |
+          STAGING=/tmp/formflow-sheet
+          rm -rf "$STAGING"; mkdir -p "$STAGING"
+          tar -xzf bundle/sheet-bundle.tar.gz -C "$STAGING"
+          cp bundle/deploy-sheet.sh "$STAGING/deploy-sheet.sh"
+          chmod +x "$STAGING/deploy-sheet.sh"
+          STAGING_DIR="$STAGING" bash "$STAGING/deploy-sheet.sh"

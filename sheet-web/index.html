@@ -182,25 +182,52 @@ function saveCfg(clientId, sheetId) {
 }
 
 // ── OAuth (Google Identity Services) ──────────────────────
-let token = null, tokenClient = null;
-async function signIn() {
-  if (!tokenClient) {
-    if (!window.google || !google.accounts || !google.accounts.oauth2)
-      throw new Error('Google 로그인 스크립트 로딩 중입니다. 잠시 후 다시 시도하세요.');
-    tokenClient = google.accounts.oauth2.initTokenClient({ client_id: cfg.clientId, scope: SCOPE, callback: () => {} });
-  }
-  token = await new Promise((resolve, reject) => {
-    tokenClient.callback = (r) => (r && r.error ? reject(new Error(r.error)) : resolve(r.access_token));
-    try { tokenClient.requestAccessToken({ prompt: '' }); } catch (e) { reject(e); }
+// 토큰은 ~1시간 만료. 만료 전 백그라운드 silent 갱신(prompt:'none')으로
+// 재로그인 팝업 없이 세션을 유지하고, 실패 시에만 대화형 로그인으로 폴백한다.
+let token = null, tokenExp = 0, tokenClient = null, refreshTimer = null;
+const TOKEN_SKEW_MS = 60 * 1000;   // 만료 1분 전이면 미리 갱신
+function resetAuth() {
+  token = null; tokenExp = 0; tokenClient = null;
+  if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+}
+function initTokenClient() {
+  if (tokenClient) return;
+  if (!window.google || !google.accounts || !google.accounts.oauth2)
+    throw new Error('Google 로그인 스크립트 로딩 중입니다. 잠시 후 다시 시도하세요.');
+  tokenClient = google.accounts.oauth2.initTokenClient({ client_id: cfg.clientId, scope: SCOPE, callback: () => {} });
+}
+// prompt: '' = 필요 시 UI(최초 로그인/동의), 'none' = 무팝업 silent 갱신
+function requestToken(prompt) {
+  initTokenClient();
+  return new Promise((resolve, reject) => {
+    tokenClient.callback = (r) => (r && r.error ? reject(new Error(r.error)) : resolve(r));
+    try { tokenClient.requestAccessToken({ prompt }); } catch (e) { reject(e); }
   });
+}
+function applyToken(r) {
+  token = r.access_token;
+  const ttl = (Number(r.expires_in) || 3300) * 1000;   // expires_in(초). 없으면 보수적 55분
+  tokenExp = Date.now() + ttl;
+  if (refreshTimer) clearTimeout(refreshTimer);
+  // 만료 2분 전(최소 30초 뒤)에 백그라운드 갱신 → idle 세션도 안 끊김
+  refreshTimer = setTimeout(() => { refreshSilently().catch(() => { token = null; }); },
+    Math.max(30 * 1000, ttl - 2 * TOKEN_SKEW_MS));
   return token;
 }
+async function refreshSilently() { return applyToken(await requestToken('none')); }
+async function signIn() { return applyToken(await requestToken('')); }   // 최초/대화형 (⟵ "로그인 + 연결")
+// 호출 직전 토큰 보장: 만료 임박이면 silent 갱신, 실패 시 대화형 폴백
+async function ensureToken() {
+  if (token && Date.now() < tokenExp - TOKEN_SKEW_MS) return token;
+  if (token) { try { return await refreshSilently(); } catch (e) { token = null; } }
+  return signIn();
+}
 
-// ── Sheets API (토큰 자동 갱신 1회 재시도) ────────────────
+// ── Sheets API (만료 임박 선제 갱신 + 401 폴백) ────────────
 async function sFetch(url, opt = {}, _retry = false) {
-  if (!token) await signIn();
+  await ensureToken();
   const r = await fetch(url, { ...opt, headers: { ...(opt.headers || {}), Authorization: 'Bearer ' + token } });
-  if (r.status === 401 && !_retry) { token = null; await signIn(); return sFetch(url, opt, true); }
+  if (r.status === 401 && !_retry) { token = null; tokenExp = 0; await ensureToken(); return sFetch(url, opt, true); }
   if (!r.ok) throw new Error(r.status + ' ' + (await r.text()).slice(0, 180));
   return r;
 }
@@ -695,7 +722,7 @@ document.getElementById('connect').onclick = async () => {
   const msg = document.getElementById('setupmsg');
   if (!clientId || !sheetId) { msg.innerHTML = '<span class="msg err">두 값 모두 입력하세요.</span>'; return; }
   saveCfg(clientId, sheetId);
-  tokenClient = null; token = null;
+  resetAuth();
   try {
     msg.textContent = 'Google 로그인 중…';
     await signIn();
