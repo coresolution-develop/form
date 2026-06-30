@@ -29,7 +29,7 @@ export function PasswordResetRequestForm() {
       const recaptchaToken = await executeRecaptcha('password_reset');
       await requestPasswordReset(values.email, recaptchaToken);
       setSent(true);
-      toast('비밀번호 재설정 메일을 보냈습니다.', 'success');
+      toast('가입된 계정이라면 재설정 링크를 보냈습니다. 메일함을 확인해주세요.', 'success');
     } catch (e: any) {
       toast(toUserMessage(e?.response?.data?.code, '요청에 실패했습니다.'), 'error');
     } finally {
