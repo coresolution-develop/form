@@ -1,5 +1,6 @@
 package net.sosyge.formflow.service;
 
+import lombok.extern.slf4j.Slf4j;
 import net.sosyge.formflow.config.UploadProperties;
 import net.sosyge.formflow.exception.BusinessException;
 import net.sosyge.formflow.exception.ErrorCode;
@@ -18,7 +19,11 @@ import java.util.UUID;
 /**
  * 파일시스템 기반 업로드 저장소. 이미지(PNG/JPG/WebP)만 허용하고 랜덤 파일명으로 저장한다.
  * SVG 는 스크립트 삽입(저장형 XSS) 위험이라 제외한다.
+ *
+ * <p>디렉토리 생성 실패는 <b>앱 시작을 막지 않는다</b> — 업로드 시점에만 오류를 낸다.
+ * (UPLOAD_DIR 미설정/권한 문제로 전체 서비스가 죽는 것을 방지.)
  */
+@Slf4j
 @Service
 public class FileStorageService {
 
@@ -35,10 +40,21 @@ public class FileStorageService {
     public FileStorageService(UploadProperties props) {
         this.root = Paths.get(props.getDir()).toAbsolutePath().normalize();
         this.maxBytes = props.getMaxSizeBytes();
+        // 시작 시엔 시도만 하고, 실패해도 예외를 삼킨다(앱 부팅 유지). 실제 보장은 업로드 시 ensureDir.
         try {
             Files.createDirectories(root);
         } catch (IOException e) {
-            throw new IllegalStateException("업로드 디렉토리 생성 실패: " + root, e);
+            log.warn("[UPLOAD] 시작 시 업로드 디렉토리 생성 실패(업로드 시 재시도): {} - {}", root, e.getMessage());
+        }
+    }
+
+    /** 업로드 직전 디렉토리 보장. 실패 시 업로드만 500(앱은 계속 동작). */
+    private void ensureDir() {
+        try {
+            Files.createDirectories(root);
+        } catch (IOException e) {
+            log.error("[UPLOAD] 업로드 디렉토리 생성 실패: {}", root, e);
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "이미지 저장소를 사용할 수 없습니다.");
         }
     }
 
@@ -60,6 +76,7 @@ public class FileStorageService {
         if (!target.getParent().equals(root)) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "잘못된 파일 경로입니다.");
         }
+        ensureDir();
         try (InputStream in = file.getInputStream()) {
             Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
