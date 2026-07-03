@@ -91,7 +91,7 @@ formflow:
   limits:
     forms-per-user: 10
     fields-per-form: 30
-    responses-per-form: 100
+    # responses-per-form 미지정 = 무제한(새 폼 response_limit NULL). 상한을 두려면 숫자 지정.
     response-retention-days: 365
   admin:
     allowed-ips: ${ADMIN_ALLOWED_IPS:}

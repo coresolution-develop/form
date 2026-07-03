@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 public class LimitsProperties {
     private int formsPerUser = 10;
     private int fieldsPerForm = 30;
-    private int responsesPerForm = 100;
+    // null = 무제한(폼 생성 시 response_limit NULL). 값을 지정하면 새 폼의 기본 응답 한도가 된다.
+    private Integer responsesPerForm = null;
     private int responseRetentionDays = 365;
 }
