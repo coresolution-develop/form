@@ -2,6 +2,7 @@ package net.sosyge.formflow.mapper;
 
 import net.sosyge.formflow.domain.Form;
 import net.sosyge.formflow.domain.FormStatus;
+import net.sosyge.formflow.domain.HeaderImageStyle;
 import net.sosyge.formflow.dto.response.admin.AdminFormItem;
 import net.sosyge.formflow.dto.response.form.FormSummaryResponse;
 import org.apache.ibatis.annotations.Mapper;
@@ -47,6 +48,14 @@ public interface FormMapper {
 
     /** 마감 예정 시각 설정/변경/해제(null) — #1 마감일 예약. */
     void updateClosesAt(@Param("id") Long id, @Param("closesAt") LocalDateTime closesAt);
+
+    /** 헤더 이미지 URL·스타일 설정/해제(둘 다 null=제거). */
+    void updateHeaderImage(@Param("id") Long id,
+                           @Param("url") String url,
+                           @Param("style") HeaderImageStyle style);
+
+    /** 헤더 이미지 스타일만 변경(로고↔배너 토글). */
+    void updateHeaderStyle(@Param("id") Long id, @Param("style") HeaderImageStyle style);
 
     /** 배치(#1): closes_at 도달한 PUBLISHED 폼 id 목록. */
     List<Long> findExpiredPublished(@Param("now") LocalDateTime now);

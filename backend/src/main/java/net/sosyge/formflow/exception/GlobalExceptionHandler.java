@@ -14,6 +14,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
@@ -51,6 +52,13 @@ public class GlobalExceptionHandler {
         log.warn("[BAD_REQUEST] {} {} - {}", req.getMethod(), req.getRequestURI(), e.getMessage());
         return ResponseEntity.badRequest()
                 .body(ApiResponse.fail(ErrorCode.BAD_REQUEST.name(), e.getMessage()));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMaxUpload(MaxUploadSizeExceededException e, HttpServletRequest req) {
+        log.warn("[UPLOAD_TOO_LARGE] {} {}", req.getMethod(), req.getRequestURI());
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.fail(ErrorCode.VALIDATION_ERROR.name(), "이미지 용량이 너무 큽니다. 2MB 이하로 업로드해주세요."));
     }
 
     @ExceptionHandler(AuthenticationException.class)
