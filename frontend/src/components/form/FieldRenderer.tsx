@@ -35,12 +35,18 @@ function SuffixSelectInput({
   disabled,
   borderClass,
   onChange,
+  inputId,
+  invalid,
+  describedBy,
 }: {
   options: string[];
   placeholder: string;
   disabled?: boolean;
   borderClass: string;
   onChange?: (value: string | string[]) => void;
+  inputId?: string;
+  invalid?: boolean;
+  describedBy?: string;
 }) {
   const [text, setText] = useState('');
   const [selected, setSelected] = useState(options[0] ?? '');
@@ -50,9 +56,12 @@ function SuffixSelectInput({
     <div className="flex items-center gap-2">
       <input
         type="text"
+        id={inputId}
         placeholder={placeholder}
         value={text}
         disabled={disabled}
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy}
         onChange={(e) => {
           setText(e.target.value);
           emit(e.target.value, selected);
@@ -106,6 +115,14 @@ export function FieldRenderer({ field, value, onChange, disabled, error }: Field
     return null;
   })();
 
+  // 접근성: 라벨↔입력, 힌트/오류를 aria로 연결. 스크롤 타겟 id도 wrapper에 부여.
+  const inputId = `ff-input-${field.id}`;
+  const labelId = `ff-label-${field.id}`;
+  const hintId = hint ? `ff-hint-${field.id}` : undefined;
+  const errorId = error ? `ff-error-${field.id}` : undefined;
+  const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
+  const isGroup = field.type === 'SINGLE' || field.type === 'MULTI';
+
   const optionBox = (selected: boolean) =>
     cn(
       'flex items-center gap-2.5 px-3 py-2.5 border rounded-lg text-sm',
@@ -130,7 +147,13 @@ export function FieldRenderer({ field, value, onChange, disabled, error }: Field
         );
       case 'SINGLE':
         return (
-          <div className="flex flex-col gap-2" role="radiogroup" aria-label={field.label}>
+          <div
+            className="flex flex-col gap-2"
+            role="radiogroup"
+            aria-labelledby={labelId}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={describedBy}
+          >
             {(field.options ?? []).map((opt, i) => (
               <label key={i} className={optionBox(strValue === opt)}>
                 <input
@@ -149,7 +172,12 @@ export function FieldRenderer({ field, value, onChange, disabled, error }: Field
         );
       case 'MULTI':
         return (
-          <div className="flex flex-col gap-2">
+          <div
+            className="flex flex-col gap-2"
+            role="group"
+            aria-labelledby={labelId}
+            aria-describedby={describedBy}
+          >
             {(field.options ?? []).map((opt, i) => (
               <label key={i} className={optionBox(arrValue.includes(opt))}>
                 <input
@@ -186,6 +214,9 @@ export function FieldRenderer({ field, value, onChange, disabled, error }: Field
                 disabled={disabled}
                 borderClass={borderClass}
                 onChange={onChange}
+                inputId={inputId}
+                invalid={!!error}
+                describedBy={describedBy}
               />
             );
           }
@@ -195,9 +226,12 @@ export function FieldRenderer({ field, value, onChange, disabled, error }: Field
         const inputEl = (
           <input
             type={inputType}
+            id={inputId}
             placeholder={field.placeholder ?? ''}
             value={strValue}
             disabled={disabled}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={describedBy}
             min={field.validation?.min}
             max={field.validation?.max}
             onChange={(e) => onChange?.(e.target.value)}
@@ -220,14 +254,30 @@ export function FieldRenderer({ field, value, onChange, disabled, error }: Field
   };
 
   return (
-    <div className="flex flex-col">
-      <label className="mb-1.5 block text-sm font-medium text-gray-800">
+    <div className="flex flex-col" id={`ff-field-${field.id}`}>
+      <label
+        id={labelId}
+        htmlFor={isGroup ? undefined : inputId}
+        className="mb-1.5 block text-sm font-medium text-gray-800"
+      >
         {field.label}
-        {field.required && <span className="ml-0.5 text-red-500">*</span>}
+        {field.required && (
+          <span className="ml-0.5 text-red-500" aria-label="필수">
+            *
+          </span>
+        )}
       </label>
       {renderControl()}
-      {hint && <p className="mt-1 text-xs text-gray-400">{hint}</p>}
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {hint && (
+        <p id={hintId} className="mt-1 text-xs text-gray-400">
+          {hint}
+        </p>
+      )}
+      {error && (
+        <p id={errorId} role="alert" className="mt-1 text-xs text-red-600">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

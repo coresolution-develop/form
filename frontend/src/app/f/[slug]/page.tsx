@@ -1,6 +1,6 @@
-import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { PublicForm } from '@/components/form/PublicForm';
+import { FormUnavailable } from '@/components/form/FormUnavailable';
 import type { PublicForm as PublicFormType } from '@/types/publicForm';
 
 // SSR 전용 fetch — 비로그인 응답자용이라 인증 axios를 쓰지 않고 plain fetch.
@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 export default async function PublicFormPage({ params }: { params: { slug: string } }) {
   const form = await fetchForm(params.slug);
-  if (!form) notFound();
+  if (!form) return <FormUnavailable />;
   return (
     <main className="min-h-screen bg-gray-50">
       <PublicForm form={form} />

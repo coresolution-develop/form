@@ -51,6 +51,18 @@ export function PublicForm({ form }: { form: PublicFormType }) {
     });
   };
 
+  // 오류 발생 시 화면 순서상 첫 오류 문항으로 스크롤 + 포커스 (긴 폼에서 헤매지 않도록)
+  const focusFirstError = (errs: Record<number, string>) => {
+    const first = form.fields.find((f) => errs[f.id]);
+    if (!first) return;
+    requestAnimationFrame(() => {
+      const wrapper = document.getElementById(`ff-field-${first.id}`);
+      wrapper?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const control = wrapper?.querySelector<HTMLElement>('input, textarea, select');
+      control?.focus({ preventScroll: true });
+    });
+  };
+
   const validateClient = (): boolean => {
     const next: Record<number, string> = {};
     for (const field of form.fields) {
@@ -59,7 +71,9 @@ export function PublicForm({ form }: { form: PublicFormType }) {
       }
     }
     setErrors(next);
-    return Object.keys(next).length === 0;
+    const ok = Object.keys(next).length === 0;
+    if (!ok) focusFirstError(next);
+    return ok;
   };
 
   const buildAnswers = (): SubmitAnswer[] =>
@@ -93,6 +107,7 @@ export function PublicForm({ form }: { form: PublicFormType }) {
           const mapped: Record<number, string> = {};
           Object.entries(fe).forEach(([k, msg]) => (mapped[Number(k)] = msg));
           setErrors(mapped);
+          focusFirstError(mapped);
         }
         setFormError('입력값을 확인해주세요.');
       } else {
