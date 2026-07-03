@@ -9,6 +9,7 @@ import net.sosyge.formflow.dto.request.form.FormClosesAtRequest;
 import net.sosyge.formflow.dto.request.form.FormCreateRequest;
 import net.sosyge.formflow.dto.request.form.FormStatusRequest;
 import net.sosyge.formflow.dto.request.form.FormUpdateRequest;
+import net.sosyge.formflow.domain.HeaderImageStyle;
 import net.sosyge.formflow.dto.response.form.FormDetailResponse;
 import net.sosyge.formflow.dto.response.form.FormSummaryResponse;
 import net.sosyge.formflow.security.CustomUserDetails;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/forms")
@@ -75,6 +77,21 @@ public class FormController {
                                             @Valid @RequestBody FormClosesAtRequest req) {
         formService.updateClosesAt(user.getId(), id, req.closesAt());
         return ApiResponse.ok();
+    }
+
+    @PostMapping("/{id}/header-image")
+    public ApiResponse<FormDetailResponse> uploadHeaderImage(
+            @CurrentUser CustomUserDetails user,
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "style", required = false) HeaderImageStyle style) {
+        return ApiResponse.ok(formService.setHeaderImage(user.getId(), id, file, style));
+    }
+
+    @DeleteMapping("/{id}/header-image")
+    public ApiResponse<FormDetailResponse> removeHeaderImage(@CurrentUser CustomUserDetails user,
+                                                             @PathVariable Long id) {
+        return ApiResponse.ok(formService.removeHeaderImage(user.getId(), id));
     }
 
     @DeleteMapping("/{id}")

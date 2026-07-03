@@ -1,6 +1,6 @@
 import { api } from '@/lib/api';
 import type { PageResponse } from '@/types/api';
-import type { FormDetail, FormStatus, FormSummary } from '@/types/form';
+import type { FormDetail, FormStatus, FormSummary, HeaderImageStyle } from '@/types/form';
 
 export interface FormCreateInput {
   title: string;
@@ -10,6 +10,7 @@ export interface FormUpdateInput {
   title?: string;
   description?: string | null;
   responseLimit?: number;
+  headerImageStyle?: HeaderImageStyle;
 }
 
 export async function listForms(page: number, size = 20): Promise<PageResponse<FormSummary>> {
@@ -34,6 +35,25 @@ export async function updateForm(id: number, input: FormUpdateInput): Promise<Fo
 
 export async function deleteForm(id: number): Promise<void> {
   await api.delete(`/api/forms/${id}`);
+}
+
+/** 헤더 이미지 업로드/교체 (multipart). style 미지정 시 서버 기본 LOGO. */
+export async function uploadHeaderImage(
+  id: number,
+  file: File,
+  style?: HeaderImageStyle,
+): Promise<FormDetail> {
+  const fd = new FormData();
+  fd.append('file', file);
+  if (style) fd.append('style', style);
+  const res = await api.post(`/api/forms/${id}/header-image`, fd);
+  return res.data.data as FormDetail;
+}
+
+/** 헤더 이미지 제거. */
+export async function deleteHeaderImage(id: number): Promise<FormDetail> {
+  const res = await api.delete(`/api/forms/${id}/header-image`);
+  return res.data.data as FormDetail;
 }
 
 /** 마감 예정 시각 설정/해제 (#1). closesAt=null → 무기한. ISO 문자열(초 미포함 가능). */

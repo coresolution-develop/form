@@ -6,6 +6,7 @@ import { AddFieldMenu } from '@/components/builder/AddFieldMenu';
 import { BuilderHeader } from '@/components/builder/BuilderHeader';
 import { FieldEditorPanel } from '@/components/builder/FieldEditorPanel';
 import { FieldList } from '@/components/builder/FieldList';
+import { HeaderImageSettings } from '@/components/builder/HeaderImageSettings';
 import { PreviewPanel } from '@/components/builder/PreviewPanel';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -65,9 +66,20 @@ export default function BuilderPage() {
       <BuilderHeader form={form} previewMode={previewMode} onTogglePreview={togglePreview} />
 
       <div className="p-6">
+        {!previewMode && (
+          <div className="mb-6">
+            <HeaderImageSettings form={form} />
+          </div>
+        )}
         {previewMode ? (
           <div className="mx-auto max-w-2xl">
-            <PreviewPanel title={form.title} description={form.description} fields={form.fields} />
+            <PreviewPanel
+              title={form.title}
+              description={form.description}
+              fields={form.fields}
+              headerImageUrl={form.headerImageUrl}
+              headerImageStyle={form.headerImageStyle}
+            />
           </div>
         ) : editMode ? (
           <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
@@ -98,7 +110,13 @@ export default function BuilderPage() {
                 이미 수집된 응답·통계의 정합성을 위해 발행 후에는 질문 구조가 잠깁니다.
               </p>
             </div>
-            <PreviewPanel title={form.title} description={form.description} fields={form.fields} />
+            <PreviewPanel
+              title={form.title}
+              description={form.description}
+              fields={form.fields}
+              headerImageUrl={form.headerImageUrl}
+              headerImageStyle={form.headerImageStyle}
+            />
           </div>
         )}
       </div>

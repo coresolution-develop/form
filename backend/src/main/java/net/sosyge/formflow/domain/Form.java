@@ -20,6 +20,8 @@ public class Form {
     private String slug;
     private String title;
     private String description;
+    private String headerImageUrl;
+    private HeaderImageStyle headerImageStyle;
     private FormStatus status;
     private Integer responseLimit;
     private LocalDateTime closedAt;

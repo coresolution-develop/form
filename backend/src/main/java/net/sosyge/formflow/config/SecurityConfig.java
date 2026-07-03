@@ -66,6 +66,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/f/*/submit").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/f/*/report").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/terms/**").permitAll()
+                        // 업로드 이미지(헤더 이미지 등)는 공개 서빙
+                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         // 메서드 제한 없이 permitAll → 미지원 메서드는 보안(401)이 아닌 405로 surface
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()

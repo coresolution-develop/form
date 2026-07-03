@@ -4,15 +4,17 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createForm,
   deleteForm,
+  deleteHeaderImage,
   getForm,
   listForms,
   updateClosesAt,
   updateForm,
   updateFormStatus,
+  uploadHeaderImage,
   type FormCreateInput,
   type FormUpdateInput,
 } from '@/lib/forms';
-import type { FormStatus } from '@/types/form';
+import type { FormStatus, HeaderImageStyle } from '@/types/form';
 
 export const formKeys = {
   all: ['forms'] as const,
@@ -78,6 +80,23 @@ export function useUpdateClosesAt(id: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (closesAt: string | null) => updateClosesAt(id, closesAt),
+    onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.detail(id) }),
+  });
+}
+
+export function useUploadHeaderImage(id: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { file: File; style?: HeaderImageStyle }) =>
+      uploadHeaderImage(id, vars.file, vars.style),
+    onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.detail(id) }),
+  });
+}
+
+export function useDeleteHeaderImage(id: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => deleteHeaderImage(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.detail(id) }),
   });
 }

@@ -7,6 +7,7 @@ import net.sosyge.formflow.config.LimitsProperties;
 import net.sosyge.formflow.domain.Form;
 import net.sosyge.formflow.domain.FormField;
 import net.sosyge.formflow.domain.FormStatus;
+import net.sosyge.formflow.domain.HeaderImageStyle;
 import net.sosyge.formflow.dto.request.form.FormCreateRequest;
 import net.sosyge.formflow.dto.request.form.FormStatusRequest;
 import net.sosyge.formflow.dto.request.form.FormUpdateRequest;
@@ -20,6 +21,7 @@ import net.sosyge.formflow.mapper.ResponseMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,9 +37,13 @@ public class FormService {
     private final ResponseMapper responseMapper;
     private final SlugGenerator slugGenerator;
     private final LimitsProperties limits;
+    private final FileStorageService fileStorageService;
 
     @Value("${formflow.app.front-url}")
     private String frontUrl;
+
+    @Value("${formflow.app.api-url}")
+    private String apiUrl;
 
     @Transactional
     public FormDetailResponse create(Long userId, FormCreateRequest req) {
@@ -89,6 +95,34 @@ public class FormService {
         String description = req.description() != null ? req.description() : form.getDescription();
         Integer responseLimit = req.responseLimit() != null ? req.responseLimit() : form.getResponseLimit();
         formMapper.updateMeta(formId, title, description, responseLimit);
+        if (req.headerImageStyle() != null) {
+            formMapper.updateHeaderStyle(formId, req.headerImageStyle());
+        }
+        return getDetail(userId, formId);
+    }
+
+    /** 헤더 이미지 업로드/교체. 새 파일 저장 후 URL·스타일 기록, 이전 파일은 정리. */
+    @Transactional
+    public FormDetailResponse setHeaderImage(Long userId, Long formId, MultipartFile file, HeaderImageStyle style) {
+        Form form = loadOwnedForm(userId, formId);
+        String filename = fileStorageService.storeImage(file);
+        String url = apiUrl + "/uploads/" + filename;
+        HeaderImageStyle target = style != null ? style : HeaderImageStyle.LOGO;
+        formMapper.updateHeaderImage(formId, url, target);
+        if (form.getHeaderImageUrl() != null) {
+            fileStorageService.deleteByUrl(form.getHeaderImageUrl());
+        }
+        return getDetail(userId, formId);
+    }
+
+    /** 헤더 이미지 제거. URL·스타일 NULL 처리 + 파일 삭제. */
+    @Transactional
+    public FormDetailResponse removeHeaderImage(Long userId, Long formId) {
+        Form form = loadOwnedForm(userId, formId);
+        formMapper.updateHeaderImage(formId, null, null);
+        if (form.getHeaderImageUrl() != null) {
+            fileStorageService.deleteByUrl(form.getHeaderImageUrl());
+        }
         return getDetail(userId, formId);
     }
 
