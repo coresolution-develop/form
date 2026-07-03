@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { FieldRenderer } from '@/components/form/FieldRenderer';
-import { ReportFormModal } from '@/components/form/ReportFormModal';
 import { Button } from '@/components/ui/Button';
 import { toUserMessage } from '@/lib/errorMessage';
 import { useRecaptcha } from '@/lib/recaptcha';
@@ -30,7 +29,6 @@ export function PublicForm({ form }: { form: PublicFormType }) {
   const [errors, setErrors] = useState<Record<number, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [reportOpen, setReportOpen] = useState(false);
   const [respondentKey, setRespondentKey] = useState('');
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
 
@@ -222,15 +220,8 @@ export function PublicForm({ form }: { form: PublicFormType }) {
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-3 text-xs text-gray-400">
-          <span>FormFlow로 만든 폼</span>
-          <button type="button" onClick={() => setReportOpen(true)} className="underline hover:text-gray-600">
-            신고하기
-          </button>
-        </div>
+        <div className="pt-3 text-center text-xs text-gray-400">이 설문 프로그램은 코어솔루션이 만들었습니다.</div>
       </div>
-
-      <ReportFormModal slug={form.slug} open={reportOpen} onClose={() => setReportOpen(false)} />
     </div>
   );
 }
