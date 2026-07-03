@@ -222,7 +222,7 @@ export function PublicForm({ form }: { form: PublicFormType }) {
           </div>
         </div>
 
-        <div className="pt-3 text-center text-xs text-gray-400">© {COPYRIGHT_YEAR} 코어솔루션. All rights reserved.</div>
+        <div className="pt-3 text-center text-xs text-gray-400">© {COPYRIGHT_YEAR} CoreSolution. All rights reserved.</div>
       </div>
     </div>
   );
