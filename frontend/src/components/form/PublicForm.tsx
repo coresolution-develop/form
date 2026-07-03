@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { FieldRenderer } from '@/components/form/FieldRenderer';
 import { Button } from '@/components/ui/Button';
+import { resolveAssetUrl } from '@/lib/assetUrl';
 import { toUserMessage } from '@/lib/errorMessage';
 import { useRecaptcha } from '@/lib/recaptcha';
 import { submitPublicForm, type SubmitAnswer } from '@/lib/publicForm';
@@ -166,7 +167,7 @@ export function PublicForm({ form }: { form: PublicFormType }) {
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
           {form.headerImageUrl && form.headerImageStyle === 'BANNER' ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={form.headerImageUrl} alt="" className="max-h-48 w-full object-cover" />
+            <img src={resolveAssetUrl(form.headerImageUrl)} alt="" className="max-h-48 w-full object-cover" />
           ) : (
             <div className="h-1.5 bg-brand" />
           )}
@@ -174,7 +175,7 @@ export function PublicForm({ form }: { form: PublicFormType }) {
             {form.headerImageUrl && form.headerImageStyle !== 'BANNER' && (
               <div className="mb-5 flex justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={form.headerImageUrl} alt="" className="max-h-14 w-auto" />
+                <img src={resolveAssetUrl(form.headerImageUrl)} alt="" className="max-h-14 w-auto" />
               </div>
             )}
             <h1 className="text-xl font-semibold text-gray-900">{form.title}</h1>

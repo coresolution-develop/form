@@ -4,6 +4,7 @@ import { useRef, type ChangeEvent } from 'react';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useDeleteHeaderImage, useUpdateForm, useUploadHeaderImage } from '@/hooks/useForms';
+import { resolveAssetUrl } from '@/lib/assetUrl';
 import { cn } from '@/lib/cn';
 import { toUserMessage } from '@/lib/errorMessage';
 import type { FormDetail, HeaderImageStyle } from '@/types/form';
@@ -104,11 +105,11 @@ export function HeaderImageSettings({ form }: { form: FormDetail }) {
           <div className="overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
             {style === 'BANNER' ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={form.headerImageUrl!} alt="헤더 배너 미리보기" className="max-h-40 w-full object-cover" />
+              <img src={resolveAssetUrl(form.headerImageUrl)} alt="헤더 배너 미리보기" className="max-h-40 w-full object-cover" />
             ) : (
               <div className="flex justify-center py-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={form.headerImageUrl!} alt="헤더 로고 미리보기" className="max-h-14 w-auto" />
+                <img src={resolveAssetUrl(form.headerImageUrl)} alt="헤더 로고 미리보기" className="max-h-14 w-auto" />
               </div>
             )}
           </div>

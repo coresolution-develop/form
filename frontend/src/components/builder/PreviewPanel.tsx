@@ -1,6 +1,7 @@
 'use client';
 
 import { FieldRenderer } from '@/components/form/FieldRenderer';
+import { resolveAssetUrl } from '@/lib/assetUrl';
 import type { FormField } from '@/types/field';
 import type { HeaderImageStyle } from '@/types/form';
 
@@ -18,13 +19,13 @@ export function PreviewPanel({ title, description, fields, headerImageUrl, heade
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
       {headerImageUrl && headerImageStyle === 'BANNER' && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={headerImageUrl} alt="" className="max-h-40 w-full object-cover" />
+        <img src={resolveAssetUrl(headerImageUrl)} alt="" className="max-h-40 w-full object-cover" />
       )}
       <div className="p-6">
         {headerImageUrl && headerImageStyle !== 'BANNER' && (
           <div className="mb-4 flex justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={headerImageUrl} alt="" className="max-h-14 w-auto" />
+            <img src={resolveAssetUrl(headerImageUrl)} alt="" className="max-h-14 w-auto" />
           </div>
         )}
         <h2 className="text-xl font-bold text-gray-900">{title}</h2>
