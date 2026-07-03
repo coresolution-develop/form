@@ -15,6 +15,8 @@ type AnswerValue = string | string[];
 // reCAPTCHA 활성 여부(빌드 시 인라인). 활성일 때만 Google 고지문을 노출한다.
 const RECAPTCHA_ENABLED = process.env.NEXT_PUBLIC_RECAPTCHA_ENABLED !== 'false';
 
+const COPYRIGHT_YEAR = new Date().getFullYear();
+
 function isEmpty(v: AnswerValue | undefined): boolean {
   if (v == null) return true;
   if (Array.isArray(v)) return v.length === 0;
@@ -220,7 +222,7 @@ export function PublicForm({ form }: { form: PublicFormType }) {
           </div>
         </div>
 
-        <div className="pt-3 text-center text-xs text-gray-400">이 설문 프로그램은 코어솔루션이 만들었습니다.</div>
+        <div className="pt-3 text-center text-xs text-gray-400">© {COPYRIGHT_YEAR} 코어솔루션. All rights reserved.</div>
       </div>
     </div>
   );
