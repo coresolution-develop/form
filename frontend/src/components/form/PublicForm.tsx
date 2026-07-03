@@ -13,6 +13,9 @@ import type { PublicForm as PublicFormType } from '@/types/publicForm';
 
 type AnswerValue = string | string[];
 
+// reCAPTCHA 활성 여부(빌드 시 인라인). 활성일 때만 Google 고지문을 노출한다.
+const RECAPTCHA_ENABLED = process.env.NEXT_PUBLIC_RECAPTCHA_ENABLED !== 'false';
+
 function isEmpty(v: AnswerValue | undefined): boolean {
   if (v == null) return true;
   if (Array.isArray(v)) return v.length === 0;
@@ -29,8 +32,13 @@ export function PublicForm({ form }: { form: PublicFormType }) {
   const [submitting, setSubmitting] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [respondentKey, setRespondentKey] = useState('');
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
+
+  const submittedKey = `formflow_submitted_${form.slug}`;
+  const hasRequired = form.fields.some((f) => f.required);
 
   // respondentKey: 마운트 시 localStorage에서 가져오거나 생성 후 보관 (재방문 중복 방지 UX)
+  // 이 기기에서 이미 제출한 기록이 있으면 폼 대신 '응답 완료' 화면을 보여준다.
   useEffect(() => {
     const storageKey = `formflow_respondent_${form.slug}`;
     let key = localStorage.getItem(storageKey);
@@ -39,7 +47,23 @@ export function PublicForm({ form }: { form: PublicFormType }) {
       localStorage.setItem(storageKey, key);
     }
     setRespondentKey(key);
-  }, [form.slug]);
+    if (localStorage.getItem(submittedKey)) {
+      setAlreadySubmitted(true);
+    }
+  }, [form.slug, submittedKey]);
+
+  // 입력 중 실수로 페이지를 벗어나면 경고 (제출 중/완료 시엔 경고하지 않음)
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      const dirty = Object.values(answers).some((v) => !isEmpty(v));
+      if (dirty && !submitting && !alreadySubmitted) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [answers, submitting, alreadySubmitted]);
 
   const setAnswer = (fieldId: number, value: AnswerValue) => {
     setAnswers((prev) => ({ ...prev, [fieldId]: value }));
@@ -94,11 +118,14 @@ export function PublicForm({ form }: { form: PublicFormType }) {
     try {
       const token = await executeRecaptcha('submit');
       await submitPublicForm(form.slug, { respondentKey, answers: buildAnswers() }, token);
+      localStorage.setItem(submittedKey, '1');
       router.push(`/f/${form.slug}/thanks`);
     } catch (e: any) {
       const code = e?.response?.data?.code as string | undefined;
       if (code === 'DUPLICATE_RESPONSE') {
-        setFormError('이미 응답하셨습니다. 한 번만 제출할 수 있습니다.');
+        // 서버가 중복으로 막았다면 이 기기에도 기록해 재방문 시 '응답 완료' 화면을 보여준다.
+        localStorage.setItem(submittedKey, '1');
+        setAlreadySubmitted(true);
       } else if (code === 'FORM_NOT_AVAILABLE') {
         setFormError('마감되었거나 응답할 수 없는 폼입니다.');
       } else if (code === 'VALIDATION_ERROR') {
@@ -118,6 +145,21 @@ export function PublicForm({ form }: { form: PublicFormType }) {
     }
   };
 
+  if (alreadySubmitted) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-4 text-center">
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <div className="h-1.5 bg-brand" />
+          <div className="px-8 py-12">
+            <h1 className="text-xl font-semibold text-gray-900">이미 응답하셨습니다</h1>
+            <p className="mt-2 text-sm text-gray-500">이 설문은 한 번만 응답할 수 있어요.</p>
+            <p className="mt-1 text-xs text-gray-400">참여해 주셔서 감사합니다.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto w-full max-w-xl px-4 py-10">
@@ -127,6 +169,11 @@ export function PublicForm({ form }: { form: PublicFormType }) {
             <h1 className="text-xl font-semibold text-gray-900">{form.title}</h1>
             {form.description && (
               <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-500">{form.description}</p>
+            )}
+            {hasRequired && (
+              <p className="mt-2 text-xs text-gray-400">
+                <span className="text-red-500">*</span> 표시는 필수 항목입니다.
+              </p>
             )}
 
             <div className="my-6 border-t border-gray-100" />
@@ -148,6 +195,30 @@ export function PublicForm({ form }: { form: PublicFormType }) {
             <Button className="mt-8" fullWidth size="lg" onClick={onSubmit} loading={submitting}>
               제출하기
             </Button>
+
+            {RECAPTCHA_ENABLED && (
+              <p className="mt-3 text-center text-[11px] leading-relaxed text-gray-400">
+                이 사이트는 reCAPTCHA로 보호되며 Google{' '}
+                <a
+                  href="https://policies.google.com/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-gray-600"
+                >
+                  개인정보처리방침
+                </a>
+                과{' '}
+                <a
+                  href="https://policies.google.com/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-gray-600"
+                >
+                  서비스 약관
+                </a>
+                이 적용됩니다.
+              </p>
+            )}
           </div>
         </div>
 

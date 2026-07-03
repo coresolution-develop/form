@@ -123,6 +123,12 @@ export function FieldRenderer({ field, value, onChange, disabled, error }: Field
   const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
   const isGroup = field.type === 'SINGLE' || field.type === 'MULTI';
 
+  // 글자수 카운터: 최대 길이가 있는 SHORT/LONG 에 실시간 표시 (select 모드 SHORT 는 값이 합쳐져 제외)
+  const maxLen =
+    field.type === 'SHORT' || field.type === 'LONG' ? field.validation?.maxLength : undefined;
+  const showCounter =
+    maxLen != null && !(field.type === 'SHORT' && field.validation?.suffixMode === 'select');
+
   const optionBox = (selected: boolean) =>
     cn(
       'flex items-center gap-2.5 px-3 py-2.5 border rounded-lg text-sm',
@@ -268,10 +274,21 @@ export function FieldRenderer({ field, value, onChange, disabled, error }: Field
         )}
       </label>
       {renderControl()}
-      {hint && (
-        <p id={hintId} className="mt-1 text-xs text-gray-400">
-          {hint}
-        </p>
+      {(hint || showCounter) && (
+        <div className="mt-1 flex items-start justify-between gap-2">
+          {hint ? (
+            <p id={hintId} className="text-xs text-gray-400">
+              {hint}
+            </p>
+          ) : (
+            <span />
+          )}
+          {showCounter && (
+            <span className="shrink-0 text-xs tabular-nums text-gray-400">
+              {strValue.length}/{maxLen}
+            </span>
+          )}
+        </div>
       )}
       {error && (
         <p id={errorId} role="alert" className="mt-1 text-xs text-red-600">
