@@ -42,7 +42,9 @@ public class FormService {
     @Value("${formflow.app.front-url}")
     private String frontUrl;
 
-    @Value("${formflow.app.api-url}")
+    // 기본값(빈 문자열) 필수 — API_URL 미설정 환경에서 플레이스홀더 해석 실패로 앱이 안 뜨는 것을 방지.
+    // 비어 있으면 이미지 URL이 상대경로가 되어 이미지 기능만 동작 안 함(앱은 정상).
+    @Value("${formflow.app.api-url:}")
     private String apiUrl;
 
     @Transactional
