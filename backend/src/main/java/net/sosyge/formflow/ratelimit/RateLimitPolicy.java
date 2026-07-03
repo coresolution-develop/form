@@ -46,8 +46,10 @@ public class RateLimitPolicy {
             Matcher submit = SUBMIT.matcher(uri);
             if (submit.matches()) {
                 String slug = submit.group(1);
+                // 사내 공용 NAT(다수 응답자가 같은 공인 IP) 대응 — 봇은 reCAPTCHA+중복키가 막으므로
+                // flood 가드로서 넉넉히 시간당 300회. 남용 스크립트는 여전히 차단.
                 return Optional.of(new Resolved("submit-ip-slug", "rl:submit:" + ip + ":" + slug,
-                        bandwidth(30, Duration.ofHours(1))));
+                        bandwidth(300, Duration.ofHours(1))));
             }
             Matcher report = REPORT.matcher(uri);
             if (report.matches()) {
