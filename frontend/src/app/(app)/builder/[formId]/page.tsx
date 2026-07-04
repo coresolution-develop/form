@@ -6,6 +6,7 @@ import { AddFieldMenu } from '@/components/builder/AddFieldMenu';
 import { BuilderHeader } from '@/components/builder/BuilderHeader';
 import { FieldEditorPanel } from '@/components/builder/FieldEditorPanel';
 import { FieldList } from '@/components/builder/FieldList';
+import { FormDescriptionEditor } from '@/components/builder/FormDescriptionEditor';
 import { HeaderImageSettings } from '@/components/builder/HeaderImageSettings';
 import { PreviewPanel } from '@/components/builder/PreviewPanel';
 import { Button } from '@/components/ui/Button';
@@ -67,7 +68,8 @@ export default function BuilderPage() {
 
       <div className="p-6">
         {!previewMode && (
-          <div className="mb-6">
+          <div className="mb-6 flex flex-col gap-4">
+            <FormDescriptionEditor form={form} />
             <HeaderImageSettings form={form} />
           </div>
         )}
