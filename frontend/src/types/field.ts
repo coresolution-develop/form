@@ -1,5 +1,11 @@
 export type FieldType = 'SHORT' | 'LONG' | 'SINGLE' | 'MULTI' | 'EMAIL' | 'NUMBER' | 'DATE';
 
+/** 조건부 표시 규칙 — 기준 필드(객관식)의 답이 values 중 하나일 때만 이 필드를 표시. */
+export interface FieldCondition {
+  fieldId: number;
+  values: string[];
+}
+
 export interface FieldValidation {
   minLength?: number;
   maxLength?: number;
@@ -11,6 +17,8 @@ export interface FieldValidation {
   suffixMode?: 'fixed' | 'select';
   /** #2 2단계: select 모드의 선택 옵션 목록. */
   suffixOptions?: string[];
+  /** 조건부 표시 규칙. 지정 시 기준 필드 답이 values 중 하나일 때만 이 필드를 표시. */
+  condition?: FieldCondition;
   [key: string]: unknown;
 }
 

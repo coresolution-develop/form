@@ -1,5 +1,7 @@
 package net.sosyge.formflow.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import net.sosyge.formflow.domain.FieldType;
 import net.sosyge.formflow.domain.Form;
@@ -43,6 +45,7 @@ public class PublicFormService {
     private final RecaptchaVerifier recaptchaVerifier;
     private final RecaptchaProperties recaptchaProperties;
     private final FieldValidator fieldValidator;
+    private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
     public PublicFormResponse getPublicForm(String slug) {
@@ -57,7 +60,11 @@ public class PublicFormService {
 
         Form form = loadAvailableForm(slug);
         List<FormField> fields = fieldMapper.findByFormIdOrderByOrderNum(form.getId());
-        validateAnswers(fields, req.answers());
+        Map<Long, String> answerMap = req.answers().stream()
+                .filter(a -> a.fieldId() != null)
+                .collect(Collectors.toMap(SubmitRequest.Answer::fieldId, a -> a.value() == null ? "" : a.value(),
+                        (a, b) -> a));
+        validateAnswers(fields, answerMap);
 
         Response response = Response.builder()
                 .formId(form.getId())
@@ -76,6 +83,8 @@ public class PublicFormService {
         List<ResponseItem> items = req.answers().stream()
                 .filter(a -> a.fieldId() != null && fieldById.containsKey(a.fieldId()))
                 .filter(a -> StringUtils.hasText(a.value()))
+                // 조건 미충족(숨은) 필드의 답은 저장하지 않는다.
+                .filter(a -> isVisible(fieldById.get(a.fieldId()), answerMap))
                 .map(a -> ResponseItem.builder()
                         .responseId(response.getId())
                         .fieldId(a.fieldId())
@@ -138,14 +147,12 @@ public class PublicFormService {
         return form;
     }
 
-    private void validateAnswers(List<FormField> fields, List<SubmitRequest.Answer> answers) {
-        Map<Long, String> answerMap = answers.stream()
-                .filter(a -> a.fieldId() != null)
-                .collect(Collectors.toMap(SubmitRequest.Answer::fieldId, a -> a.value() == null ? "" : a.value(),
-                        (a, b) -> a));
-
+    private void validateAnswers(List<FormField> fields, Map<Long, String> answerMap) {
         Map<String, String> fieldErrors = new HashMap<>();
         for (FormField field : fields) {
+            if (!isVisible(field, answerMap)) {
+                continue; // 조건 미충족(숨은) 필드는 필수/검증 대상에서 제외
+            }
             String value = answerMap.get(field.getId());
             if (field.isRequired() && !StringUtils.hasText(value)) {
                 fieldErrors.put(field.getId().toString(), "필수 항목입니다.");
@@ -160,6 +167,37 @@ public class PublicFormService {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR,
                     ErrorCode.VALIDATION_ERROR.getDefaultMessage(),
                     Map.of("fieldErrors", fieldErrors));
+        }
+    }
+
+    /**
+     * 조건부 표시 평가 — validation.condition = {fieldId, values}.
+     * 기준 필드 답(SINGLE=문자열 / MULTI=JSON 배열)이 values 중 하나면 표시. 조건 없으면 항상 표시.
+     */
+    private boolean isVisible(FormField field, Map<Long, String> answerMap) {
+        if (field == null || field.getValidation() == null) {
+            return true;
+        }
+        Object condObj = field.getValidation().get("condition");
+        if (!(condObj instanceof Map<?, ?> cond)) {
+            return true;
+        }
+        if (!(cond.get("fieldId") instanceof Number fid) || !(cond.get("values") instanceof List<?> vals) || vals.isEmpty()) {
+            return true; // 조건이 불완전하면 항상 표시(안전)
+        }
+        Set<String> allowed = vals.stream().map(String::valueOf).collect(Collectors.toSet());
+        String answer = answerMap.get(fid.longValue());
+        if (answer == null || answer.isBlank()) {
+            return false;
+        }
+        if (allowed.contains(answer)) {
+            return true; // SINGLE
+        }
+        try { // MULTI: JSON 배열 답과 교집합
+            List<String> arr = objectMapper.readValue(answer, new TypeReference<List<String>>() {});
+            return arr.stream().anyMatch(allowed::contains);
+        } catch (Exception e) {
+            return false;
         }
     }
 
