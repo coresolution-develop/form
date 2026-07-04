@@ -14,9 +14,14 @@ public record StatsResponse(
             Long fieldId,
             String label,
             String type,
+            long answeredCount,
             List<Distribution> distribution,
-            List<String> sampleAnswers
+            List<String> sampleAnswers,
+            NumberStats numberStats
     ) {}
 
     public record Distribution(String value, long count, double ratio) {}
+
+    /** 숫자형 집계. */
+    public record NumberStats(long count, double average, double min, double max, double sum) {}
 }

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { MultiChoiceChart } from '@/components/stats/MultiChoiceChart';
+import { NumberSummary } from '@/components/stats/NumberSummary';
 import { SingleChoiceChart } from '@/components/stats/SingleChoiceChart';
 import { TextSamples } from '@/components/stats/TextSamples';
 import { Button } from '@/components/ui/Button';
@@ -83,10 +84,17 @@ export default function StatsPage() {
                 <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
                   {FIELD_TYPE_LABELS[f.type as FieldType] ?? f.type}
                 </span>
+                <span className="ml-auto shrink-0 text-xs text-gray-400">{f.answeredCount}명 응답</span>
               </div>
               {f.type === 'SINGLE' && f.distribution && <SingleChoiceChart distribution={f.distribution} />}
               {f.type === 'MULTI' && f.distribution && <MultiChoiceChart distribution={f.distribution} />}
-              {!['SINGLE', 'MULTI'].includes(f.type) && <TextSamples samples={f.sampleAnswers ?? []} />}
+              {f.type === 'NUMBER' &&
+                (f.numberStats ? (
+                  <NumberSummary stats={f.numberStats} />
+                ) : (
+                  <p className="text-sm text-gray-400">아직 응답이 없습니다.</p>
+                ))}
+              {!['SINGLE', 'MULTI', 'NUMBER'].includes(f.type) && <TextSamples samples={f.sampleAnswers ?? []} />}
             </section>
           ))}
         </div>
