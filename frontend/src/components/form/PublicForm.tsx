@@ -24,6 +24,16 @@ function isEmpty(v: AnswerValue | undefined): boolean {
   return v.trim() === '';
 }
 
+/** 조건부 표시 평가 — 조건 없으면 항상 표시. 기준 필드 답이 values 중 하나면 표시. */
+function isFieldVisible(field: FormField, answers: Record<number, AnswerValue>): boolean {
+  const cond = field.validation?.condition;
+  if (!cond || !cond.fieldId || !cond.values?.length) return true;
+  const a = answers[cond.fieldId];
+  if (a == null) return false;
+  if (Array.isArray(a)) return a.some((v) => cond.values.includes(v));
+  return cond.values.includes(a);
+}
+
 export function PublicForm({ form }: { form: PublicFormType }) {
   const router = useRouter();
   const executeRecaptcha = useRecaptcha();
@@ -91,6 +101,7 @@ export function PublicForm({ form }: { form: PublicFormType }) {
   const validateClient = (): boolean => {
     const next: Record<number, string> = {};
     for (const field of form.fields) {
+      if (!isFieldVisible(field, answers)) continue; // 숨은 필드는 검증 제외
       if (field.required && isEmpty(answers[field.id])) {
         next[field.id] = '필수 항목입니다.';
       }
@@ -104,6 +115,7 @@ export function PublicForm({ form }: { form: PublicFormType }) {
   const buildAnswers = (): SubmitAnswer[] =>
     form.fields
       .map((field) => {
+        if (!isFieldVisible(field, answers)) return null; // 숨은 필드 답은 전송하지 않음
         const v = answers[field.id];
         if (isEmpty(v)) return null;
         // §5.2 규약: MULTI → JSON 배열 문자열, 나머지 → 단일 문자열
@@ -191,15 +203,17 @@ export function PublicForm({ form }: { form: PublicFormType }) {
             <div className="my-6 border-t border-gray-100" />
 
             <div className="flex flex-col gap-5">
-              {form.fields.map((field: FormField) => (
-                <FieldRenderer
-                  key={field.id}
-                  field={field}
-                  value={answers[field.id]}
-                  onChange={(v) => setAnswer(field.id, v)}
-                  error={errors[field.id]}
-                />
-              ))}
+              {form.fields
+                .filter((field) => isFieldVisible(field, answers))
+                .map((field: FormField) => (
+                  <FieldRenderer
+                    key={field.id}
+                    field={field}
+                    value={answers[field.id]}
+                    onChange={(v) => setAnswer(field.id, v)}
+                    error={errors[field.id]}
+                  />
+                ))}
             </div>
 
             {formError && <p className="mt-6 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{formError}</p>}

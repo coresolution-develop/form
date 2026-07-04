@@ -98,7 +98,7 @@ export default function BuilderPage() {
 
             <aside className="rounded-xl border border-gray-200 bg-white p-4">
               {selectedField ? (
-                <FieldEditorPanel formId={formId} field={selectedField} />
+                <FieldEditorPanel formId={formId} field={selectedField} fields={form.fields} />
               ) : (
                 <p className="py-12 text-center text-sm text-gray-400">편집할 필드를 선택하세요.</p>
               )}

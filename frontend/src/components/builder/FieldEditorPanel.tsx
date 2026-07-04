@@ -7,11 +7,19 @@ import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { useUpdateField } from '@/hooks/useFields';
 import { toUserMessage } from '@/lib/errorMessage';
-import { CHOICE_TYPES, FIELD_TYPE_LABELS, type FieldValidation, type FormField } from '@/types/field';
+import {
+  CHOICE_TYPES,
+  FIELD_TYPE_LABELS,
+  type FieldCondition,
+  type FieldValidation,
+  type FormField,
+} from '@/types/field';
 
 interface Props {
   formId: number;
   field: FormField;
+  /** 조건부 표시의 기준 필드 후보를 찾기 위한 전체 필드 목록. */
+  fields: FormField[];
 }
 
 /** validation에서 SHORT 접미사 모드 파생 (1단계 fixed 데이터 호환). */
@@ -21,7 +29,7 @@ function deriveSuffixMode(v: FieldValidation | null | undefined): 'none' | 'fixe
   return 'none';
 }
 
-export function FieldEditorPanel({ formId, field }: Props) {
+export function FieldEditorPanel({ formId, field, fields }: Props) {
   const { toast } = useToast();
   const updateField = useUpdateField(formId);
 
@@ -35,6 +43,15 @@ export function FieldEditorPanel({ formId, field }: Props) {
   const [suffixMode, setSuffixMode] = useState<'none' | 'fixed' | 'select'>(
     () => deriveSuffixMode(field.validation),
   );
+  // 조건부 표시: 기준 필드 id + 트리거 값들. validation.condition 에 저장된다.
+  const [condFieldId, setCondFieldId] = useState<number | null>(field.validation?.condition?.fieldId ?? null);
+  const [condValues, setCondValues] = useState<string[]>(field.validation?.condition?.values ?? []);
+
+  // 조건 기준 후보: 이 필드보다 앞에 있는 객관식(SINGLE/MULTI) 필드만.
+  const candidates = fields.filter(
+    (f) => f.id !== field.id && CHOICE_TYPES.includes(f.type) && f.orderNum < field.orderNum,
+  );
+  const condField = candidates.find((f) => f.id === condFieldId) ?? null;
 
   // 선택된 필드가 바뀌면 로컬 편집 상태 재초기화
   useEffect(() => {
@@ -44,6 +61,8 @@ export function FieldEditorPanel({ formId, field }: Props) {
     setOptions(field.options ?? []);
     setValidation(field.validation ?? {});
     setSuffixMode(deriveSuffixMode(field.validation));
+    setCondFieldId(field.validation?.condition?.fieldId ?? null);
+    setCondValues(field.validation?.condition?.values ?? []);
   }, [field.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const save = (override?: {
@@ -52,6 +71,7 @@ export function FieldEditorPanel({ formId, field }: Props) {
     required?: boolean;
     options?: string[];
     validation?: FieldValidation;
+    condition?: FieldCondition | null;
   }) => {
     const nextLabel = override?.label ?? label;
     if (!nextLabel.trim()) {
@@ -66,6 +86,19 @@ export function FieldEditorPanel({ formId, field }: Props) {
         return;
       }
     }
+    // 조건 결정: override 에 condition 키가 있으면 그것을(null=해제), 없으면 현재 상태에서 파생.
+    const effectiveCond: FieldCondition | undefined =
+      override?.condition !== undefined
+        ? (override.condition ?? undefined)
+        : condFieldId && condValues.length
+          ? { fieldId: condFieldId, values: condValues }
+          : undefined;
+    // 최종 validation: 객관식은 길이/접미사 키를 안 쓰므로 빈 객체에서 시작, 나머지는 기존 유지. 조건만 병합.
+    const baseValidation: FieldValidation = isChoice ? {} : { ...(override?.validation ?? validation) };
+    delete baseValidation.condition;
+    if (effectiveCond) baseValidation.condition = effectiveCond;
+    const finalValidation = Object.keys(baseValidation).length > 0 ? baseValidation : null;
+
     updateField.mutate(
       {
         fieldId: field.id,
@@ -74,11 +107,32 @@ export function FieldEditorPanel({ formId, field }: Props) {
           placeholder: override?.placeholder ?? placeholder,
           required: override?.required ?? required,
           options: isChoice ? nextOptions.map((o) => o.trim()).filter(Boolean) : null,
-          validation: isChoice ? null : (override?.validation ?? validation),
+          validation: finalValidation,
         },
       },
       { onError: (e: any) => toast(toUserMessage(e?.response?.data?.code, '저장 실패'), 'error') },
     );
+  };
+
+  // ----- 조건부 표시 핸들러 (변경 즉시 저장) -----
+  const enableCondition = () => {
+    setCondFieldId(candidates[0]?.id ?? null);
+    setCondValues([]); // 값 선택 전까진 조건 미완성 → 저장 보류
+  };
+  const disableCondition = () => {
+    setCondFieldId(null);
+    setCondValues([]);
+    save({ condition: null });
+  };
+  const changeCondField = (id: number) => {
+    setCondFieldId(id);
+    setCondValues([]);
+    save({ condition: null }); // 값 재선택 전까진 조건 해제 상태
+  };
+  const toggleCondValue = (val: string) => {
+    const next = condValues.includes(val) ? condValues.filter((v) => v !== val) : [...condValues, val];
+    setCondValues(next);
+    save({ condition: condFieldId && next.length ? { fieldId: condFieldId, values: next } : null });
   };
 
   const updateOption = (idx: number, value: string) =>
@@ -310,6 +364,56 @@ export function FieldEditorPanel({ formId, field }: Props) {
             onChange={(e) => setValidationNum('max', e.target.value)}
             onBlur={() => save()}
           />
+        </div>
+      )}
+
+      {(candidates.length > 0 || condFieldId != null) && (
+        <div className="flex flex-col gap-2 rounded-lg border border-gray-200 p-3">
+          <Checkbox
+            label="조건부로 표시 (앞의 객관식 답변에 따라)"
+            checked={condFieldId != null}
+            onChange={(e) => (e.target.checked ? enableCondition() : disableCondition())}
+          />
+          {condFieldId != null && (
+            <div className="flex flex-col gap-2">
+              {candidates.length === 0 ? (
+                <p className="text-xs text-red-600">기준 질문이 없어졌습니다. 조건을 꺼주세요.</p>
+              ) : (
+                <>
+                  <label className="text-xs text-gray-500">기준 질문</label>
+                  <select
+                    value={condFieldId ?? ''}
+                    onChange={(e) => changeCondField(Number(e.target.value))}
+                    aria-label="조건 기준 질문"
+                    className="h-10 rounded-lg border border-gray-300 px-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
+                  >
+                    {candidates.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.label || '(제목 없음)'}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500">아래 답을 선택했을 때만 이 필드를 표시합니다.</p>
+                  <div className="flex flex-col gap-1">
+                    {(condField?.options ?? []).map((opt) => (
+                      <label key={opt} className="flex items-center gap-2 text-sm text-gray-700">
+                        <input
+                          type="checkbox"
+                          checked={condValues.includes(opt)}
+                          onChange={() => toggleCondValue(opt)}
+                          className="h-4 w-4 accent-brand"
+                        />
+                        {opt}
+                      </label>
+                    ))}
+                  </div>
+                  {condValues.length === 0 && (
+                    <p className="text-xs text-amber-600">표시할 답을 1개 이상 선택하세요.</p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
