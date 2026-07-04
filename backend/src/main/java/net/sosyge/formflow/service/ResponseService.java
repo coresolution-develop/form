@@ -23,9 +23,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -34,7 +36,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ResponseService {
 
-    private static final int SAMPLE_LIMIT = 10;
+    /** 텍스트형 통계에 반환할 최대 응답 수(과도한 페이로드 방지). */
+    private static final int TEXT_ANSWER_LIMIT = 500;
     private static final TypeReference<List<String>> STR_LIST = new TypeReference<>() {};
 
     private final FormMapper formMapper;
@@ -92,18 +95,52 @@ public class ResponseService {
 
         List<StatsResponse.FieldStat> fieldStats = fields.stream().map(f -> {
             List<String> values = byField.getOrDefault(f.getId(), List.of());
+            long answered = values.stream().filter(StringUtils::hasText).count();
             if (f.getType() == FieldType.SINGLE || f.getType() == FieldType.MULTI) {
                 return new StatsResponse.FieldStat(f.getId(), f.getLabel(), f.getType().name(),
-                        distribution(f, values), null);
+                        answered, distribution(f, values), null, null);
             }
-            List<String> samples = values.stream()
+            if (f.getType() == FieldType.NUMBER) {
+                return new StatsResponse.FieldStat(f.getId(), f.getLabel(), f.getType().name(),
+                        answered, null, null, numberStats(values));
+            }
+            // 텍스트형: 전체 응답(캡 이내) 반환 — 시설 의견 등 자유서술을 모아 볼 수 있게.
+            List<String> answers = values.stream()
                     .filter(StringUtils::hasText)
-                    .limit(SAMPLE_LIMIT)
+                    .limit(TEXT_ANSWER_LIMIT)
                     .toList();
-            return new StatsResponse.FieldStat(f.getId(), f.getLabel(), f.getType().name(), null, samples);
+            return new StatsResponse.FieldStat(f.getId(), f.getLabel(), f.getType().name(),
+                    answered, null, answers, null);
         }).toList();
 
         return new StatsResponse(total, fieldStats);
+    }
+
+    /** 숫자형 집계: 파싱 가능한 값들로 개수·평균·최소·최대·합계. 값이 없으면 null. */
+    private StatsResponse.NumberStats numberStats(List<String> values) {
+        double[] nums = values.stream()
+                .filter(StringUtils::hasText)
+                .map(v -> {
+                    try {
+                        return Double.parseDouble(v.trim());
+                    } catch (NumberFormatException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .mapToDouble(Double::doubleValue)
+                .toArray();
+        if (nums.length == 0) {
+            return null;
+        }
+        double sum = Arrays.stream(nums).sum();
+        double min = Arrays.stream(nums).min().orElse(0);
+        double max = Arrays.stream(nums).max().orElse(0);
+        return new StatsResponse.NumberStats(nums.length, round2(sum / nums.length), round2(min), round2(max), round2(sum));
+    }
+
+    private static double round2(double d) {
+        return Math.round(d * 100.0) / 100.0;
     }
 
     /** SINGLE: value별 카운트. MULTI: JSON 파싱 후 옵션별(응답당 1회) 카운트. ratio=count/응답수. */
