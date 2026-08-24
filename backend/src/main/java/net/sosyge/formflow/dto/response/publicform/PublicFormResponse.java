@@ -15,7 +15,7 @@ public record PublicFormResponse(
         String title,
         String description,
         String headerImageUrl,
-        String headerImageStyle,
+        String logoImageUrl,
         List<FieldResponse> fields
 ) {
     public static PublicFormResponse of(Form form, List<FormField> fields) {
@@ -24,7 +24,7 @@ public record PublicFormResponse(
                 form.getTitle(),
                 form.getDescription(),
                 form.getHeaderImageUrl(),
-                form.getHeaderImageStyle() != null ? form.getHeaderImageStyle().name() : null,
+                form.getLogoImageUrl(),
                 fields.stream().map(FieldResponse::from).toList()
         );
     }

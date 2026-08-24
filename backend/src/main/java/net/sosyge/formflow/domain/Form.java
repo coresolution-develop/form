@@ -20,8 +20,10 @@ public class Form {
     private String slug;
     private String title;
     private String description;
+    /** 배너 이미지 절대 URL(상단 전체폭). NULL=없음. */
     private String headerImageUrl;
-    private HeaderImageStyle headerImageStyle;
+    /** 로고 이미지 절대 URL(제목 위 중앙 소형). NULL=없음. */
+    private String logoImageUrl;
     private FormStatus status;
     private Integer responseLimit;
     private LocalDateTime closedAt;

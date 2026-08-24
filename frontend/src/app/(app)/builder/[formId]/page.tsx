@@ -80,7 +80,7 @@ export default function BuilderPage() {
               description={form.description}
               fields={form.fields}
               headerImageUrl={form.headerImageUrl}
-              headerImageStyle={form.headerImageStyle}
+              logoImageUrl={form.logoImageUrl}
             />
           </div>
         ) : editMode ? (
@@ -117,7 +117,7 @@ export default function BuilderPage() {
               description={form.description}
               fields={form.fields}
               headerImageUrl={form.headerImageUrl}
-              headerImageStyle={form.headerImageStyle}
+              logoImageUrl={form.logoImageUrl}
             />
           </div>
         )}

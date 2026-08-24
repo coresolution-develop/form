@@ -5,16 +5,18 @@ import {
   createForm,
   deleteForm,
   deleteHeaderImage,
+  deleteLogoImage,
   getForm,
   listForms,
   updateClosesAt,
   updateForm,
   updateFormStatus,
   uploadHeaderImage,
+  uploadLogoImage,
   type FormCreateInput,
   type FormUpdateInput,
 } from '@/lib/forms';
-import type { FormStatus, HeaderImageStyle } from '@/types/form';
+import type { FormStatus } from '@/types/form';
 
 export const formKeys = {
   all: ['forms'] as const,
@@ -87,8 +89,7 @@ export function useUpdateClosesAt(id: number) {
 export function useUploadHeaderImage(id: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (vars: { file: File; style?: HeaderImageStyle }) =>
-      uploadHeaderImage(id, vars.file, vars.style),
+    mutationFn: (file: File) => uploadHeaderImage(id, file),
     onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.detail(id) }),
   });
 }
@@ -97,6 +98,22 @@ export function useDeleteHeaderImage(id: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => deleteHeaderImage(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.detail(id) }),
+  });
+}
+
+export function useUploadLogoImage(id: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => uploadLogoImage(id, file),
+    onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.detail(id) }),
+  });
+}
+
+export function useDeleteLogoImage(id: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => deleteLogoImage(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.detail(id) }),
   });
 }

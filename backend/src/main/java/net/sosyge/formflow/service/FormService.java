@@ -7,7 +7,6 @@ import net.sosyge.formflow.config.LimitsProperties;
 import net.sosyge.formflow.domain.Form;
 import net.sosyge.formflow.domain.FormField;
 import net.sosyge.formflow.domain.FormStatus;
-import net.sosyge.formflow.domain.HeaderImageStyle;
 import net.sosyge.formflow.dto.request.form.FormCreateRequest;
 import net.sosyge.formflow.dto.request.form.FormStatusRequest;
 import net.sosyge.formflow.dto.request.form.FormUpdateRequest;
@@ -97,35 +96,50 @@ public class FormService {
         String description = req.description() != null ? req.description() : form.getDescription();
         Integer responseLimit = req.responseLimit() != null ? req.responseLimit() : form.getResponseLimit();
         formMapper.updateMeta(formId, title, description, responseLimit);
-        if (req.headerImageStyle() != null) {
-            formMapper.updateHeaderStyle(formId, req.headerImageStyle());
-        }
         return getDetail(userId, formId);
     }
 
-    /** 헤더 이미지 업로드/교체. 새 파일 저장 후 URL·스타일 기록, 이전 파일은 정리. */
+    /** 배너 이미지 업로드/교체(상단 전체폭). 새 파일 저장 후 URL 기록, 이전 파일은 정리. */
     @Transactional
-    public FormDetailResponse setHeaderImage(Long userId, Long formId, MultipartFile file, HeaderImageStyle style) {
+    public FormDetailResponse setHeaderImage(Long userId, Long formId, MultipartFile file) {
         Form form = loadOwnedForm(userId, formId);
-        String filename = fileStorageService.storeImage(file);
-        String url = apiUrl + "/uploads/" + filename;
-        HeaderImageStyle target = style != null ? style : HeaderImageStyle.LOGO;
-        formMapper.updateHeaderImage(formId, url, target);
-        if (form.getHeaderImageUrl() != null) {
-            fileStorageService.deleteByUrl(form.getHeaderImageUrl());
-        }
+        String url = storeAndBuildUrl(file);
+        formMapper.updateHeaderImage(formId, url);
+        fileStorageService.deleteByUrl(form.getHeaderImageUrl());
         return getDetail(userId, formId);
     }
 
-    /** 헤더 이미지 제거. URL·스타일 NULL 처리 + 파일 삭제. */
+    /** 배너 이미지 제거. URL NULL 처리 + 파일 삭제. */
     @Transactional
     public FormDetailResponse removeHeaderImage(Long userId, Long formId) {
         Form form = loadOwnedForm(userId, formId);
-        formMapper.updateHeaderImage(formId, null, null);
-        if (form.getHeaderImageUrl() != null) {
-            fileStorageService.deleteByUrl(form.getHeaderImageUrl());
-        }
+        formMapper.updateHeaderImage(formId, null);
+        fileStorageService.deleteByUrl(form.getHeaderImageUrl());
         return getDetail(userId, formId);
+    }
+
+    /** 로고 이미지 업로드/교체(제목 위 중앙 소형). 배너와 독립 슬롯. */
+    @Transactional
+    public FormDetailResponse setLogoImage(Long userId, Long formId, MultipartFile file) {
+        Form form = loadOwnedForm(userId, formId);
+        String url = storeAndBuildUrl(file);
+        formMapper.updateLogoImage(formId, url);
+        fileStorageService.deleteByUrl(form.getLogoImageUrl());
+        return getDetail(userId, formId);
+    }
+
+    /** 로고 이미지 제거. URL NULL 처리 + 파일 삭제. */
+    @Transactional
+    public FormDetailResponse removeLogoImage(Long userId, Long formId) {
+        Form form = loadOwnedForm(userId, formId);
+        formMapper.updateLogoImage(formId, null);
+        fileStorageService.deleteByUrl(form.getLogoImageUrl());
+        return getDetail(userId, formId);
+    }
+
+    /** 업로드 파일을 저장하고 공개 접근용 절대 URL을 만든다. */
+    private String storeAndBuildUrl(MultipartFile file) {
+        return apiUrl + "/uploads/" + fileStorageService.storeImage(file);
     }
 
     /**

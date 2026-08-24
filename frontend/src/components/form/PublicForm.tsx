@@ -177,17 +177,17 @@ export function PublicForm({ form }: { form: PublicFormType }) {
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto w-full max-w-xl px-4 py-10">
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-          {form.headerImageUrl && form.headerImageStyle === 'BANNER' ? (
+          {form.headerImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={resolveAssetUrl(form.headerImageUrl)} alt="" className="max-h-48 w-full object-cover" />
           ) : (
             <div className="h-1.5 bg-brand" />
           )}
           <div className="p-7">
-            {form.headerImageUrl && form.headerImageStyle !== 'BANNER' && (
+            {form.logoImageUrl && (
               <div className="mb-5 flex justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={resolveAssetUrl(form.headerImageUrl)} alt="" className="max-h-14 w-auto" />
+                <img src={resolveAssetUrl(form.logoImageUrl)} alt="" className="max-h-14 w-auto" />
               </div>
             )}
             <h1 className="text-xl font-semibold text-gray-900">{form.title}</h1>

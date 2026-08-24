@@ -3,25 +3,35 @@
 import { useRef, type ChangeEvent } from 'react';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
-import { useDeleteHeaderImage, useUpdateForm, useUploadHeaderImage } from '@/hooks/useForms';
+import {
+  useDeleteHeaderImage,
+  useDeleteLogoImage,
+  useUploadHeaderImage,
+  useUploadLogoImage,
+} from '@/hooks/useForms';
 import { resolveAssetUrl } from '@/lib/assetUrl';
-import { cn } from '@/lib/cn';
 import { toUserMessage } from '@/lib/errorMessage';
-import type { FormDetail, HeaderImageStyle } from '@/types/form';
+import type { FormDetail } from '@/types/form';
 
 const ACCEPT = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
 const MAX_BYTES = 2 * 1024 * 1024;
 
-/** 빌더 폼 설정: 공개 폼 상단 헤더 이미지(로고/배너) 업로드·스타일·제거. */
-export function HeaderImageSettings({ form }: { form: FormDetail }) {
-  const { toast } = useToast();
-  const upload = useUploadHeaderImage(form.id);
-  const remove = useDeleteHeaderImage(form.id);
-  const updateForm = useUpdateForm(form.id);
-  const inputRef = useRef<HTMLInputElement>(null);
+interface SlotProps {
+  title: string;
+  hint: string;
+  /** BANNER=전체폭 미리보기, LOGO=중앙 소형 미리보기. */
+  variant: 'BANNER' | 'LOGO';
+  url: string | null;
+  uploading: boolean;
+  removing: boolean;
+  onPick: (file: File) => void;
+  onRemove: () => void;
+}
 
-  const hasImage = !!form.headerImageUrl;
-  const style: HeaderImageStyle = form.headerImageStyle ?? 'LOGO';
+/** 이미지 슬롯 1개(배너 또는 로고). 선택 → 검증 → 상위로 위임. */
+function ImageSlot({ title, hint, variant, url, uploading, removing, onPick, onRemove }: SlotProps) {
+  const { toast } = useToast();
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const onFile = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -35,44 +45,22 @@ export function HeaderImageSettings({ form }: { form: FormDetail }) {
       toast('이미지는 2MB 이하만 올릴 수 있어요.', 'error');
       return;
     }
-    upload.mutate(
-      { file, style: form.headerImageStyle ?? undefined },
-      {
-        onSuccess: () => toast('헤더 이미지를 저장했어요.', 'success'),
-        onError: (err: any) => toast(toUserMessage(err?.response?.data?.code, '업로드 실패'), 'error'),
-      },
-    );
+    onPick(file);
   };
-
-  const setStyle = (s: HeaderImageStyle) => {
-    if (s === style) return;
-    updateForm.mutate(
-      { headerImageStyle: s },
-      { onError: (err: any) => toast(toUserMessage(err?.response?.data?.code, '변경 실패'), 'error') },
-    );
-  };
-
-  const onRemove = () =>
-    remove.mutate(undefined, {
-      onSuccess: () => toast('헤더 이미지를 제거했어요.', 'success'),
-      onError: (err: any) => toast(toUserMessage(err?.response?.data?.code, '제거 실패'), 'error'),
-    });
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
+    <div className="rounded-lg border border-gray-200 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-sm font-semibold text-gray-800">헤더 이미지</h2>
-          <p className="mt-0.5 text-xs text-gray-400">
-            공개 폼 상단에 로고나 배너를 표시합니다. PNG·JPG·WebP·GIF, 2MB 이하.
-          </p>
+          <h3 className="text-sm font-medium text-gray-800">{title}</h3>
+          <p className="mt-0.5 text-xs text-gray-400">{hint}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={() => inputRef.current?.click()} loading={upload.isPending}>
-            {hasImage ? '이미지 변경' : '이미지 추가'}
+          <Button variant="secondary" size="sm" onClick={() => inputRef.current?.click()} loading={uploading}>
+            {url ? '변경' : '추가'}
           </Button>
-          {hasImage && (
-            <Button variant="ghost" size="sm" onClick={onRemove} loading={remove.isPending}>
+          {url && (
+            <Button variant="ghost" size="sm" onClick={onRemove} loading={removing}>
               제거
             </Button>
           )}
@@ -81,40 +69,65 @@ export function HeaderImageSettings({ form }: { form: FormDetail }) {
 
       <input ref={inputRef} type="file" accept={ACCEPT.join(',')} onChange={onFile} className="hidden" aria-hidden />
 
-      {hasImage && (
-        <div className="mt-4 flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">표시 방식</span>
-            <div className="inline-flex overflow-hidden rounded-lg border border-gray-300">
-              {(['LOGO', 'BANNER'] as HeaderImageStyle[]).map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setStyle(s)}
-                  className={cn(
-                    'px-3 py-1 text-xs transition-colors',
-                    style === s ? 'bg-brand text-white' : 'bg-white text-gray-600 hover:bg-gray-50',
-                  )}
-                >
-                  {s === 'LOGO' ? '로고 (중앙 소형)' : '배너 (전체폭)'}
-                </button>
-              ))}
+      {url && (
+        <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+          {variant === 'BANNER' ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={resolveAssetUrl(url)} alt={`${title} 미리보기`} className="max-h-40 w-full object-cover" />
+          ) : (
+            <div className="flex justify-center py-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={resolveAssetUrl(url)} alt={`${title} 미리보기`} className="max-h-14 w-auto" />
             </div>
-          </div>
-
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
-            {style === 'BANNER' ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={resolveAssetUrl(form.headerImageUrl)} alt="헤더 배너 미리보기" className="max-h-40 w-full object-cover" />
-            ) : (
-              <div className="flex justify-center py-4">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={resolveAssetUrl(form.headerImageUrl)} alt="헤더 로고 미리보기" className="max-h-14 w-auto" />
-              </div>
-            )}
-          </div>
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+/** 빌더 폼 설정: 공개 폼 상단 배너·로고 업로드/제거. 두 슬롯은 서로 독립이라 함께 쓸 수 있다. */
+export function HeaderImageSettings({ form }: { form: FormDetail }) {
+  const { toast } = useToast();
+  const uploadBanner = useUploadHeaderImage(form.id);
+  const removeBanner = useDeleteHeaderImage(form.id);
+  const uploadLogo = useUploadLogoImage(form.id);
+  const removeLogo = useDeleteLogoImage(form.id);
+
+  const done = (msg: string) => ({
+    onSuccess: () => toast(msg, 'success'),
+    onError: (err: any) => toast(toUserMessage(err?.response?.data?.code, '실패했어요.'), 'error'),
+  });
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-4">
+      <h2 className="text-sm font-semibold text-gray-800">헤더 이미지</h2>
+      <p className="mt-0.5 text-xs text-gray-400">
+        공개 폼 상단에 표시됩니다. 배너와 로고를 함께 쓸 수 있어요. PNG·JPG·WebP·GIF, 각 2MB 이하.
+      </p>
+
+      <div className="mt-3 flex flex-col gap-3">
+        <ImageSlot
+          title="배너"
+          hint="폼 맨 위에 전체폭으로 크게"
+          variant="BANNER"
+          url={form.headerImageUrl}
+          uploading={uploadBanner.isPending}
+          removing={removeBanner.isPending}
+          onPick={(file) => uploadBanner.mutate(file, done('배너를 저장했어요.'))}
+          onRemove={() => removeBanner.mutate(undefined, done('배너를 제거했어요.'))}
+        />
+        <ImageSlot
+          title="로고"
+          hint="폼 제목 위에 중앙 정렬로 작게"
+          variant="LOGO"
+          url={form.logoImageUrl}
+          uploading={uploadLogo.isPending}
+          removing={removeLogo.isPending}
+          onPick={(file) => uploadLogo.mutate(file, done('로고를 저장했어요.'))}
+          onRemove={() => removeLogo.mutate(undefined, done('로고를 제거했어요.'))}
+        />
+      </div>
     </div>
   );
 }

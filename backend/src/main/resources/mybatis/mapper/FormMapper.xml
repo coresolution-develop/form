@@ -10,14 +10,14 @@
     </insert>
 
     <select id="findByIdActive" resultType="net.sosyge.formflow.domain.Form">
-        SELECT id, user_id, slug, title, description, header_image_url, header_image_style,
+        SELECT id, user_id, slug, title, description, header_image_url, logo_image_url,
                status, response_limit, closed_at, closes_at, deleted_at, created_at, updated_at
         FROM forms
         WHERE id = #{id} AND deleted_at IS NULL
     </select>
 
     <select id="findActiveBySlug" resultType="net.sosyge.formflow.domain.Form">
-        SELECT id, user_id, slug, title, description, header_image_url, header_image_style,
+        SELECT id, user_id, slug, title, description, header_image_url, logo_image_url,
                status, response_limit, closed_at, closes_at, deleted_at, created_at, updated_at
         FROM forms
         WHERE slug = #{slug} AND status = 'PUBLISHED' AND deleted_at IS NULL
@@ -83,11 +83,11 @@
     </update>
 
     <update id="updateHeaderImage">
-        UPDATE forms SET header_image_url = #{url}, header_image_style = #{style} WHERE id = #{id}
+        UPDATE forms SET header_image_url = #{url} WHERE id = #{id}
     </update>
 
-    <update id="updateHeaderStyle">
-        UPDATE forms SET header_image_style = #{style} WHERE id = #{id}
+    <update id="updateLogoImage">
+        UPDATE forms SET logo_image_url = #{url} WHERE id = #{id}
     </update>
 
     <select id="findExpiredPublished" resultType="long">

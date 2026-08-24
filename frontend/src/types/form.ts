@@ -2,9 +2,6 @@ import type { FormField } from './field';
 
 export type FormStatus = 'DRAFT' | 'PUBLISHED' | 'CLOSED';
 
-/** 공개 폼 헤더 이미지 표시 방식 — LOGO=상단 중앙 소형, BANNER=상단 전체폭. */
-export type HeaderImageStyle = 'LOGO' | 'BANNER';
-
 export interface FormSummary {
   id: number;
   slug: string;
@@ -20,8 +17,10 @@ export interface FormDetail {
   slug: string;
   title: string;
   description: string | null;
+  /** 배너 이미지(상단 전체폭). */
   headerImageUrl: string | null;
-  headerImageStyle: HeaderImageStyle | null;
+  /** 로고 이미지(제목 위 중앙 소형). 배너와 독립 슬롯이라 동시 사용 가능. */
+  logoImageUrl: string | null;
   status: FormStatus;
   responseLimit: number | null;
   responseCount: number;

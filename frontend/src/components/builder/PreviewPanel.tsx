@@ -3,29 +3,28 @@
 import { FieldRenderer } from '@/components/form/FieldRenderer';
 import { resolveAssetUrl } from '@/lib/assetUrl';
 import type { FormField } from '@/types/field';
-import type { HeaderImageStyle } from '@/types/form';
 
 interface Props {
   title: string;
   description: string | null;
   fields: FormField[];
   headerImageUrl?: string | null;
-  headerImageStyle?: HeaderImageStyle | null;
+  logoImageUrl?: string | null;
 }
 
 /** 응답자 관점 미리보기 (로컬 상태만, API 호출 없음). 모든 입력은 disabled. */
-export function PreviewPanel({ title, description, fields, headerImageUrl, headerImageStyle }: Props) {
+export function PreviewPanel({ title, description, fields, headerImageUrl, logoImageUrl }: Props) {
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-      {headerImageUrl && headerImageStyle === 'BANNER' && (
+      {headerImageUrl && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={resolveAssetUrl(headerImageUrl)} alt="" className="max-h-40 w-full object-cover" />
       )}
       <div className="p-6">
-        {headerImageUrl && headerImageStyle !== 'BANNER' && (
+        {logoImageUrl && (
           <div className="mb-4 flex justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={resolveAssetUrl(headerImageUrl)} alt="" className="max-h-14 w-auto" />
+            <img src={resolveAssetUrl(logoImageUrl)} alt="" className="max-h-14 w-auto" />
           </div>
         )}
         <h2 className="text-xl font-bold text-gray-900">{title}</h2>
