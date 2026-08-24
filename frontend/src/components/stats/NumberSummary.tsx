@@ -16,13 +16,13 @@ export function NumberSummary({ stats }: { stats: NumberStats }) {
         <div
           key={c.label}
           className={`rounded-xl px-3 py-3 text-center ${
-            c.highlight ? 'bg-brand-light' : 'bg-gray-50'
+            c.highlight ? 'bg-brand-light' : 'bg-surface-subtle'
           }`}
         >
-          <div className={`text-xs ${c.highlight ? 'text-brand-dark' : 'text-gray-400'}`}>{c.label}</div>
+          <div className={`text-xs ${c.highlight ? 'text-brand-dark' : 'text-ink-300'}`}>{c.label}</div>
           <div
             className={`mt-0.5 text-lg font-semibold tabular-nums ${
-              c.highlight ? 'text-brand-dark' : 'text-gray-900'
+              c.highlight ? 'text-brand-dark' : 'text-ink-900'
             }`}
           >
             {c.value.toLocaleString(undefined, { maximumFractionDigits: 2 })}

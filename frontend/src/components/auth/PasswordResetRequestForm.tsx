@@ -39,7 +39,7 @@ export function PasswordResetRequestForm() {
 
   if (sent) {
     return (
-      <p className="text-sm text-gray-700">
+      <p className="text-sm text-ink-700">
         입력하신 이메일로 비밀번호 재설정 링크를 보냈습니다. (해당 계정이 존재하는 경우)
         <br />
         메일함을 확인해주세요.

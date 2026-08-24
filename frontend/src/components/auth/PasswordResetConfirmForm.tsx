@@ -59,7 +59,7 @@ export function PasswordResetConfirmForm({ token }: { token: string }) {
         error={errors.confirmPassword?.message}
         {...register('confirmPassword')}
       />
-      {formError && <p className="text-sm text-red-600">{formError}</p>}
+      {formError && <p className="text-sm text-danger-accent">{formError}</p>}
       <Button type="submit" fullWidth size="lg" loading={submitting}>
         비밀번호 변경
       </Button>

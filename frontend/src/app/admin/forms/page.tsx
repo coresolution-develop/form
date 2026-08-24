@@ -54,7 +54,7 @@ export default function AdminFormsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <h1 className="text-2xl font-semibold text-gray-900">폼 관리</h1>
+      <h1 className="text-2xl font-semibold text-ink-900">폼 관리</h1>
 
       <form onSubmit={onSearch} className="flex items-center gap-2">
         <Input
@@ -73,7 +73,7 @@ export default function AdminFormsPage() {
           <Spinner className="h-8 w-8" />
         </div>
       ) : query.isError || !query.data ? (
-        <p className="py-20 text-center text-gray-500">폼 목록을 불러올 수 없습니다.</p>
+        <p className="py-20 text-center text-ink-400">폼 목록을 불러올 수 없습니다.</p>
       ) : (
         <>
           <FormTable forms={query.data.items} onForceClose={(f) => { setReason(''); setCloseTarget(f); }} />
@@ -88,7 +88,7 @@ export default function AdminFormsPage() {
       )}
 
       <Modal open={!!closeTarget} onClose={() => setCloseTarget(null)} title="폼 강제 마감">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-ink-500">
           <strong>{closeTarget?.title}</strong> 폼을 마감합니다. 소유자에게 메일로 통보되며 마감 후 응답을 받지 않습니다.
         </p>
         <Textarea

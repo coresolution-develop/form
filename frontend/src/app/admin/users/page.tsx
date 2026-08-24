@@ -72,7 +72,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <h1 className="text-2xl font-semibold text-gray-900">사용자 관리</h1>
+      <h1 className="text-2xl font-semibold text-ink-900">사용자 관리</h1>
 
       {/* 필터 */}
       <div className="flex flex-wrap items-center gap-3">
@@ -80,7 +80,7 @@ export default function AdminUsersPage() {
           value={status}
           onChange={(e) => onStatusChange(e.target.value as UserStatus | '')}
           aria-label="상태 필터"
-          className="h-10 rounded-lg border border-gray-300 px-3 text-sm focus:border-brand focus:outline-none"
+          className="h-10 rounded-lg border border-line-input px-3 text-sm focus:border-brand focus:outline-none"
         >
           {STATUS_OPTIONS.map((s) => (
             <option key={s} value={s}>
@@ -106,7 +106,7 @@ export default function AdminUsersPage() {
           <Spinner className="h-8 w-8" />
         </div>
       ) : query.isError || !query.data ? (
-        <p className="py-20 text-center text-gray-500">사용자 목록을 불러올 수 없습니다.</p>
+        <p className="py-20 text-center text-ink-400">사용자 목록을 불러올 수 없습니다.</p>
       ) : (
         <>
           <UserTable
@@ -129,7 +129,7 @@ export default function AdminUsersPage() {
 
       {/* 정지 Modal */}
       <Modal open={!!suspendTarget} onClose={() => setSuspendTarget(null)} title="계정 정지">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-ink-500">
           <strong>{suspendTarget?.email}</strong> 계정을 정지합니다. 사유를 입력하세요 (사용자에게 메일로 통보됩니다).
         </p>
         <Textarea
@@ -155,7 +155,7 @@ export default function AdminUsersPage() {
 
       {/* 복원 Modal */}
       <Modal open={!!restoreTarget} onClose={() => setRestoreTarget(null)} title="계정 복원">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-ink-500">
           <strong>{restoreTarget?.email}</strong> 계정을 다시 활성화합니다.
         </p>
         <div className="mt-6 flex justify-end gap-2">

@@ -96,7 +96,7 @@ export function SignupForm() {
         privacyError={errors.privacyAgreed?.message}
       />
 
-      {formError && <p className="text-sm text-red-600">{formError}</p>}
+      {formError && <p className="text-sm text-danger-accent">{formError}</p>}
 
       <Button type="submit" fullWidth size="lg" loading={submitting} disabled={!serviceAgreed || !privacyAgreed}>
         가입하기

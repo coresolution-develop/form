@@ -31,7 +31,7 @@ export default function ResponsesPage() {
       (formQuery.error as any)?.response?.status ?? (listQuery.error as any)?.response?.status;
     return (
       <div className="mx-auto max-w-3xl py-20 text-center">
-        <p className="text-gray-600">
+        <p className="text-ink-500">
           {status === 403 ? '이 폼의 응답을 볼 권한이 없습니다.' : '응답을 불러올 수 없습니다.'}
         </p>
         <Link href="/dashboard" className="mt-3 inline-block text-sm text-brand hover:underline">
@@ -44,24 +44,24 @@ export default function ResponsesPage() {
   const form = formQuery.data;
   const data = listQuery.data;
   if (!form || !data) {
-    return <p className="py-20 text-center text-gray-500">응답을 불러올 수 없습니다.</p>;
+    return <p className="py-20 text-center text-ink-400">응답을 불러올 수 없습니다.</p>;
   }
 
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <Link href="/dashboard" className="text-sm text-gray-500 hover:text-gray-800">
+          <Link href="/dashboard" className="text-sm text-ink-400 hover:text-ink-700">
             ← 대시보드
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold text-gray-900">{form.title}</h1>
-          <p className="text-sm text-gray-500">총 {data.total}개 응답</p>
+          <h1 className="mt-1 text-2xl font-semibold text-ink-900">{form.title}</h1>
+          <p className="text-sm text-ink-400">총 {data.total}개 응답</p>
         </div>
         <div className="flex items-center gap-2">
           <CsvDownloadButton formId={formId} disabled={data.total === 0} />
           <Link
             href={`/forms/${formId}/stats`}
-            className="rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-800 hover:bg-gray-200"
+            className="rounded-lg bg-surface-fill px-3 py-2 text-sm text-ink-700 hover:bg-surface-fill-hover"
           >
             통계 보기
           </Link>
@@ -69,10 +69,10 @@ export default function ResponsesPage() {
       </div>
 
       {data.items.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-300 py-20 text-center">
-          <p className="text-gray-500">아직 응답이 없습니다.</p>
-          <p className="mt-1 text-sm text-gray-400">
-            공개 URL을 공유해 응답을 받아보세요: <span className="text-gray-500">{form.publicUrl}</span>
+        <div className="rounded-xl border border-dashed border-line-input py-20 text-center">
+          <p className="text-ink-400">아직 응답이 없습니다.</p>
+          <p className="mt-1 text-sm text-ink-300">
+            공개 URL을 공유해 응답을 받아보세요: <span className="text-ink-400">{form.publicUrl}</span>
           </p>
         </div>
       ) : (
@@ -83,7 +83,7 @@ export default function ResponsesPage() {
               <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
                 이전
               </Button>
-              <span className="text-sm text-gray-500">{page}</span>
+              <span className="text-sm text-ink-400">{page}</span>
               <Button variant="secondary" size="sm" disabled={!data.hasNext} onClick={() => setPage((p) => p + 1)}>
                 다음
               </Button>

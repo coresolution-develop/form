@@ -3,10 +3,10 @@ import { USER_STATUS_LABELS } from '@/types/admin';
 import type { UserStatus } from '@/types/user';
 
 const STYLES: Record<UserStatus, string> = {
-  PENDING: 'bg-gray-100 text-gray-600',
-  ACTIVE: 'bg-green-100 text-green-700',
-  SUSPENDED: 'bg-red-100 text-red-700',
-  DELETED: 'bg-gray-200 text-gray-500',
+  PENDING: 'bg-surface-fill text-ink-500',
+  ACTIVE: 'bg-ok-bg text-ok-fg',
+  SUSPENDED: 'bg-danger-bg-strong text-danger-fg',
+  DELETED: 'bg-surface-fill-hover text-ink-400',
 };
 
 export function UserStatusBadge({ status }: { status: UserStatus }) {

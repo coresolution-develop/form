@@ -15,7 +15,7 @@ export function Pagination({ page, size, total, hasNext, onPageChange }: Props) 
   const from = total === 0 ? 0 : (page - 1) * size + 1;
   const to = Math.min(page * size, total);
   return (
-    <div className="flex items-center justify-between pt-3 text-sm text-gray-600">
+    <div className="flex items-center justify-between pt-3 text-sm text-ink-500">
       <span>
         {from}–{to} / 총 {total}건
       </span>

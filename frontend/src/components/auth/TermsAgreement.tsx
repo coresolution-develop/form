@@ -30,10 +30,10 @@ export function TermsAgreement({ service, privacy, marketing, onChange, serviceE
   };
 
   return (
-    <fieldset className="rounded-lg border border-gray-200 p-4">
-      <legend className="px-1 text-sm font-medium text-gray-800">약관 동의</legend>
+    <fieldset className="rounded-lg border border-line p-4">
+      <legend className="px-1 text-sm font-medium text-ink-700">약관 동의</legend>
 
-      <div className="border-b border-gray-100 pb-2">
+      <div className="border-b border-line-soft pb-2">
         <Checkbox
           label={<span className="font-medium">전체 동의</span>}
           checked={allChecked}
@@ -47,7 +47,7 @@ export function TermsAgreement({ service, privacy, marketing, onChange, serviceE
             <Checkbox
               label={
                 <span>
-                  <span className={row.required ? 'text-blue-600' : 'text-gray-500'}>
+                  <span className={row.required ? 'text-blue-600' : 'text-ink-400'}>
                     [{row.required ? '필수' : '선택'}]
                   </span>{' '}
                   {row.label}
@@ -60,7 +60,7 @@ export function TermsAgreement({ service, privacy, marketing, onChange, serviceE
               href={row.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-gray-500 underline hover:text-gray-700"
+              className="text-xs text-ink-400 underline hover:text-ink-700"
             >
               보기
             </a>
@@ -69,7 +69,7 @@ export function TermsAgreement({ service, privacy, marketing, onChange, serviceE
       </div>
 
       {(serviceError || privacyError) && (
-        <p className="mt-2 text-xs text-red-600">{serviceError ?? privacyError}</p>
+        <p className="mt-2 text-xs text-danger-accent">{serviceError ?? privacyError}</p>
       )}
     </fieldset>
   );

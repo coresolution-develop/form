@@ -13,11 +13,11 @@ export default function PasswordResetConfirmPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold text-gray-900">새 비밀번호 설정</h1>
+      <h1 className="text-xl font-semibold text-ink-900">새 비밀번호 설정</h1>
       {token === null ? (
-        <p className="text-sm text-gray-500">링크를 확인하는 중…</p>
+        <p className="text-sm text-ink-400">링크를 확인하는 중…</p>
       ) : token === '' ? (
-        <p className="text-sm text-red-600">유효하지 않은 링크입니다.</p>
+        <p className="text-sm text-danger-accent">유효하지 않은 링크입니다.</p>
       ) : (
         <PasswordResetConfirmForm token={token} />
       )}

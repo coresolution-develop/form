@@ -65,23 +65,23 @@ export function LoginForm() {
         <div
           role="status"
           data-testid="recaptcha-notice"
-          className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800"
+          className="rounded-lg bg-warn-bg px-3 py-2 text-xs text-warn-fg"
         >
           보안 확인(reCAPTCHA)이 적용됩니다. 사람임이 확인되면 계속 진행됩니다.
         </div>
       )}
 
-      {formError && <p className="text-sm text-red-600">{formError}</p>}
+      {formError && <p className="text-sm text-danger-accent">{formError}</p>}
 
       <Button type="submit" fullWidth size="lg" loading={submitting}>
         로그인
       </Button>
 
-      <div className="flex justify-between text-xs text-gray-500">
-        <Link href="/signup" className="hover:text-gray-700">
+      <div className="flex justify-between text-xs text-ink-400">
+        <Link href="/signup" className="hover:text-ink-700">
           회원가입
         </Link>
-        <Link href="/password-reset" className="hover:text-gray-700">
+        <Link href="/password-reset" className="hover:text-ink-700">
           비밀번호를 잊으셨나요?
         </Link>
       </div>

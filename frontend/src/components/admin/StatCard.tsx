@@ -11,17 +11,17 @@ export function StatCard({ label, value, highlight }: Props) {
   return (
     <div
       className={cn(
-        'rounded-xl border p-5',
+        'rounded-[10px] border p-4',
         highlight && value > 0
-          ? 'border-red-200 bg-red-50'
-          : 'border-gray-200 bg-white',
+          ? 'border-danger-border bg-[#fffaf9]'
+          : 'border-line bg-white',
       )}
     >
-      <p className="text-sm text-gray-500">{label}</p>
+      <p className="text-xs text-ink-400">{label}</p>
       <p
         className={cn(
-          'mt-2 text-3xl font-semibold',
-          highlight && value > 0 ? 'text-red-600' : 'text-gray-900',
+          'mt-2 text-[26px] font-semibold tracking-[-0.7px] tabular-nums',
+          highlight && value > 0 ? 'text-danger-fg' : 'text-ink-900',
         )}
       >
         {value.toLocaleString()}

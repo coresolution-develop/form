@@ -66,7 +66,7 @@ export default function AdminReportsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <h1 className="text-2xl font-semibold text-gray-900">신고 처리</h1>
+      <h1 className="text-2xl font-semibold text-ink-900">신고 처리</h1>
 
       <div className="flex flex-wrap items-center gap-2">
         {STATUS_FILTERS.map((s) => (
@@ -89,7 +89,7 @@ export default function AdminReportsPage() {
           <Spinner className="h-8 w-8" />
         </div>
       ) : query.isError || !query.data ? (
-        <p className="py-20 text-center text-gray-500">신고 목록을 불러올 수 없습니다.</p>
+        <p className="py-20 text-center text-ink-400">신고 목록을 불러올 수 없습니다.</p>
       ) : (
         <>
           <ReportQueue reports={query.data.items} onProcess={openProcess} onPreview={(r) => setPreviewId(r.formId)} />
@@ -105,15 +105,15 @@ export default function AdminReportsPage() {
 
       <Modal open={!!target} onClose={() => setTarget(null)} title="신고 처리">
         {target && (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ink-500">
             대상 폼: <strong>{target.formTitle}</strong>
           </p>
         )}
-        <label className="mt-4 block text-sm font-medium text-gray-800">처리 상태</label>
+        <label className="mt-4 block text-sm font-medium text-ink-700">처리 상태</label>
         <select
           value={nextStatus}
           onChange={(e) => setNextStatus(e.target.value as ReportStatus)}
-          className="mt-1 h-10 w-full rounded-lg border border-gray-300 px-3 text-sm focus:border-brand focus:outline-none"
+          className="mt-1 h-10 w-full rounded-lg border border-line-input px-3 text-sm focus:border-brand focus:outline-none"
         >
           {PROCESS_OPTIONS.map((s) => (
             <option key={s} value={s}>
@@ -128,7 +128,7 @@ export default function AdminReportsPage() {
           rows={3}
           className="mt-3"
         />
-        <label className="mt-3 flex items-center gap-2 text-sm text-gray-700">
+        <label className="mt-3 flex items-center gap-2 text-sm text-ink-700">
           <input
             type="checkbox"
             checked={closeForm}

@@ -22,7 +22,7 @@ export default function AdminAuditsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <h1 className="text-2xl font-semibold text-gray-900">감사 로그</h1>
+      <h1 className="text-2xl font-semibold text-ink-900">감사 로그</h1>
 
       <div className="flex flex-wrap items-center gap-2">
         {TARGET_FILTERS.map((t) => (
@@ -45,7 +45,7 @@ export default function AdminAuditsPage() {
           <Spinner className="h-8 w-8" />
         </div>
       ) : query.isError || !query.data ? (
-        <p className="py-20 text-center text-gray-500">감사 로그를 불러올 수 없습니다.</p>
+        <p className="py-20 text-center text-ink-400">감사 로그를 불러올 수 없습니다.</p>
       ) : (
         <>
           <AuditTable audits={query.data.items} />

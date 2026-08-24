@@ -33,7 +33,7 @@ export default function StatsPage() {
       (formQuery.error as any)?.response?.status ?? (statsQuery.error as any)?.response?.status;
     return (
       <div className="mx-auto max-w-3xl py-20 text-center">
-        <p className="text-gray-600">
+        <p className="text-ink-500">
           {status === 403 ? '이 폼의 통계를 볼 권한이 없습니다.' : '통계를 불러올 수 없습니다.'}
         </p>
         <Link href="/dashboard" className="mt-3 inline-block text-sm text-brand hover:underline">
@@ -46,7 +46,7 @@ export default function StatsPage() {
   const form = formQuery.data;
   const stats = statsQuery.data;
   if (!form || !stats) {
-    return <p className="py-20 text-center text-gray-500">통계를 불러올 수 없습니다.</p>;
+    return <p className="py-20 text-center text-ink-400">통계를 불러올 수 없습니다.</p>;
   }
 
   const hasChartData = stats.fields.some((f) => f.distribution && f.distribution.length > 0);
@@ -69,10 +69,10 @@ export default function StatsPage() {
     <div className="mx-auto max-w-3xl">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <Link href={`/forms/${formId}/responses`} className="text-sm text-gray-500 hover:text-gray-800">
+          <Link href={`/forms/${formId}/responses`} className="text-sm text-ink-400 hover:text-ink-700">
             ← 응답 목록
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold text-gray-900">{form.title} · 통계</h1>
+          <h1 className="mt-1 text-2xl font-semibold text-ink-900">{form.title} · 통계</h1>
         </div>
         <Button
           variant="secondary"
@@ -85,15 +85,15 @@ export default function StatsPage() {
       </div>
 
       {stats.totalResponses === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-300 py-20 text-center">
-          <p className="text-gray-500">응답이 모이면 통계가 표시됩니다.</p>
+        <div className="rounded-xl border border-dashed border-line-input py-20 text-center">
+          <p className="text-ink-400">응답이 모이면 통계가 표시됩니다.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-6">
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
             {summaryCells.map((c) => (
-              <div key={c.label} className="rounded-xl border border-gray-200 bg-white px-4 py-4 text-center">
-                <div className="text-xs text-gray-500">{c.label}</div>
+              <div key={c.label} className="rounded-xl border border-line bg-white px-4 py-4 text-center">
+                <div className="text-xs text-ink-400">{c.label}</div>
                 <div className="mt-1 text-xl font-semibold tabular-nums text-brand-dark sm:text-2xl">{c.value}</div>
               </div>
             ))}
@@ -103,16 +103,16 @@ export default function StatsPage() {
             const answerRate =
               stats.totalResponses > 0 ? Math.round((f.answeredCount / stats.totalResponses) * 100) : 0;
             return (
-            <section key={f.fieldId} className="rounded-xl border border-gray-200 bg-white p-5">
+            <section key={f.fieldId} className="rounded-xl border border-line bg-white p-5">
               <div className="mb-3 flex items-center gap-2">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-light text-xs font-semibold text-brand-dark">
                   {i + 1}
                 </span>
-                <h2 className="font-semibold text-gray-900">{f.label}</h2>
-                <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
+                <h2 className="font-semibold text-ink-900">{f.label}</h2>
+                <span className="rounded bg-surface-fill px-1.5 py-0.5 text-xs text-ink-400">
                   {FIELD_TYPE_LABELS[f.type as FieldType] ?? f.type}
                 </span>
-                <span className="ml-auto shrink-0 text-xs tabular-nums text-gray-400">
+                <span className="ml-auto shrink-0 text-xs tabular-nums text-ink-300">
                   {f.answeredCount.toLocaleString()}명 응답 · {answerRate}%
                 </span>
               </div>
@@ -122,7 +122,7 @@ export default function StatsPage() {
                 (f.numberStats ? (
                   <NumberSummary stats={f.numberStats} />
                 ) : (
-                  <p className="text-sm text-gray-400">아직 응답이 없습니다.</p>
+                  <p className="text-sm text-ink-300">아직 응답이 없습니다.</p>
                 ))}
               {!['SINGLE', 'MULTI', 'NUMBER'].includes(f.type) && <TextSamples samples={f.sampleAnswers ?? []} />}
             </section>

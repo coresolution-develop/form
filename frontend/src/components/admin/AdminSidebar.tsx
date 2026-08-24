@@ -20,9 +20,9 @@ function isActive(pathname: string, href: string): boolean {
 export function AdminSidebar() {
   const pathname = usePathname();
   return (
-    <aside className="hidden w-48 shrink-0 border-r border-gray-200 bg-gray-50 p-4 sm:block">
-      <div className="mb-3 flex items-center gap-2 px-3">
-        <span className="rounded-md bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700">
+    <aside className="hidden w-[196px] shrink-0 border-r border-line-soft bg-surface-subtle px-3 py-3.5 sm:block">
+      <div className="mb-3 flex items-center gap-2 px-[11px]">
+        <span className="rounded-md bg-admin-bg px-2 py-0.5 text-xs font-semibold text-admin-fg">
           관리자
         </span>
       </div>
@@ -34,10 +34,10 @@ export function AdminSidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                'rounded-md px-3 py-2 text-sm',
+                'rounded-[7px] px-[11px] py-2 text-[13.5px]',
                 active
-                  ? 'bg-purple-50 font-medium text-purple-700'
-                  : 'text-gray-700 hover:bg-gray-100',
+                  ? 'bg-admin-bg font-medium text-admin-fg'
+                  : 'text-ink-500 hover:bg-surface-fill',
               )}
             >
               {item.label}

@@ -18,10 +18,10 @@ interface Props {
 }
 
 const STATUS_STYLES: Record<ReportStatus, string> = {
-  PENDING: 'bg-amber-100 text-amber-700',
+  PENDING: 'bg-warn-bg text-warn-fg',
   REVIEWING: 'bg-blue-100 text-blue-700',
-  RESOLVED: 'bg-green-100 text-green-700',
-  REJECTED: 'bg-gray-200 text-gray-500',
+  RESOLVED: 'bg-ok-bg text-ok-fg',
+  REJECTED: 'bg-surface-fill-hover text-ink-400',
 };
 
 /** §10.2 누적 감지 임계: 같은 폼 PENDING 3건 이상이면 우선 처리 강조. */
@@ -30,31 +30,31 @@ const ACCUMULATION_THRESHOLD = 3;
 export function ReportQueue({ reports, onProcess, onPreview }: Props) {
   if (reports.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-300 py-10 text-center text-sm text-gray-400">
+      <div className="rounded-xl border border-dashed border-line-input py-10 text-center text-sm text-ink-300">
         조건에 맞는 신고가 없습니다.
       </div>
     );
   }
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200">
-      <table className="min-w-full divide-y divide-gray-200 text-sm">
-        <thead className="bg-gray-50">
+    <div className="overflow-x-auto rounded-xl border border-line">
+      <table className="min-w-full divide-y divide-line-softer text-sm">
+        <thead className="bg-surface-subtle">
           <tr>
-            <th className="px-4 py-3 text-left font-medium text-gray-600">신고일</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-600">대상 폼</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-600">사유</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-600">상세</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-600">상태</th>
-            <th className="px-4 py-3 text-right font-medium text-gray-600">누적</th>
-            <th className="px-4 py-3 text-right font-medium text-gray-600">작업</th>
+            <th className="px-4 py-3 text-left font-medium text-ink-500">신고일</th>
+            <th className="px-4 py-3 text-left font-medium text-ink-500">대상 폼</th>
+            <th className="px-4 py-3 text-left font-medium text-ink-500">사유</th>
+            <th className="px-4 py-3 text-left font-medium text-ink-500">상세</th>
+            <th className="px-4 py-3 text-left font-medium text-ink-500">상태</th>
+            <th className="px-4 py-3 text-right font-medium text-ink-500">누적</th>
+            <th className="px-4 py-3 text-right font-medium text-ink-500">작업</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100 bg-white">
+        <tbody className="divide-y divide-line-softer bg-white">
           {reports.map((r) => {
             const hot = r.pendingCountForForm >= ACCUMULATION_THRESHOLD;
             return (
-              <tr key={r.id} className={cn(hot && 'bg-red-50/50')}>
-                <td className="whitespace-nowrap px-4 py-3 text-gray-500">
+              <tr key={r.id} className={cn(hot && 'bg-danger-bg/50')}>
+                <td className="whitespace-nowrap px-4 py-3 text-ink-400">
                   {formatDateTime(r.createdAt)}
                 </td>
                 <td className="max-w-[220px] px-4 py-3">
@@ -68,17 +68,17 @@ export function ReportQueue({ reports, onProcess, onPreview }: Props) {
                   </button>
                   <Link
                     href={`/admin/users/${r.ownerId}`}
-                    className="block max-w-full truncate text-xs text-gray-400 hover:text-gray-600 hover:underline"
+                    className="block max-w-full truncate text-xs text-ink-300 hover:text-ink-500 hover:underline"
                     title={r.ownerEmail}
                   >
                     소유자: {r.ownerEmail}
                   </Link>
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-gray-700">
+                <td className="whitespace-nowrap px-4 py-3 text-ink-700">
                   {REPORT_REASON_LABELS[r.reason]}
                 </td>
-                <td className="max-w-[260px] truncate px-4 py-3 text-gray-600" title={r.detail ?? ''}>
-                  {r.detail || <span className="text-gray-300">—</span>}
+                <td className="max-w-[260px] truncate px-4 py-3 text-ink-500" title={r.detail ?? ''}>
+                  {r.detail || <span className="text-[#cfd4da]">—</span>}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3">
                   <span
@@ -92,11 +92,11 @@ export function ReportQueue({ reports, onProcess, onPreview }: Props) {
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-right">
                   {hot ? (
-                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                    <span className="rounded-full bg-danger-bg-strong px-2 py-0.5 text-xs font-semibold text-danger-fg">
                       누적 {r.pendingCountForForm}건
                     </span>
                   ) : (
-                    <span className="text-gray-500">{r.pendingCountForForm}</span>
+                    <span className="text-ink-400">{r.pendingCountForForm}</span>
                   )}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-right">

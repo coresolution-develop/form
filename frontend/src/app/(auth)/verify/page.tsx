@@ -50,7 +50,7 @@ export default function VerifyPage() {
 
   if (status === 'verifying') {
     return (
-      <div className="flex flex-col items-center gap-3 py-4 text-gray-600">
+      <div className="flex flex-col items-center gap-3 py-4 text-ink-500">
         <Spinner className="h-6 w-6 text-blue-600" />
         <p className="text-sm">이메일 인증을 처리하고 있습니다…</p>
       </div>
@@ -59,8 +59,8 @@ export default function VerifyPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold text-gray-900">인증 링크가 유효하지 않습니다</h1>
-      <p className="text-sm text-gray-600">링크가 만료되었거나 이미 사용되었습니다. 인증 메일을 다시 받아보세요.</p>
+      <h1 className="text-xl font-semibold text-ink-900">인증 링크가 유효하지 않습니다</h1>
+      <p className="text-sm text-ink-500">링크가 만료되었거나 이미 사용되었습니다. 인증 메일을 다시 받아보세요.</p>
       <Input
         label="이메일"
         type="email"

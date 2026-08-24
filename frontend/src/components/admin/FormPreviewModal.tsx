@@ -17,12 +17,12 @@ export function FormPreviewModal({ formId, onClose }: { formId: number | null; o
           <Spinner className="h-6 w-6" />
         </div>
       ) : isError || !data ? (
-        <p className="py-8 text-center text-sm text-gray-500">폼을 불러올 수 없습니다.</p>
+        <p className="py-8 text-center text-sm text-ink-400">폼을 불러올 수 없습니다.</p>
       ) : (
         <div className="max-h-[70vh] overflow-y-auto">
           <div className="mb-3 flex items-center gap-2">
             <StatusBadge status={data.status} />
-            <span className="text-xs text-gray-400">응답 {data.responseCount}</span>
+            <span className="text-xs text-ink-300">응답 {data.responseCount}</span>
           </div>
           <PreviewPanel title={data.title} description={data.description} fields={data.fields} />
         </div>
