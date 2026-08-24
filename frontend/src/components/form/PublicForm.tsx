@@ -160,13 +160,13 @@ export function PublicForm({ form }: { form: PublicFormType }) {
 
   if (alreadySubmitted) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-4 text-center">
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-          <div className="h-1.5 bg-brand" />
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-surface-page px-4 text-center">
+        <div className="overflow-hidden rounded-xl border border-line bg-white">
+          <div className="h-[5px] bg-brand" />
           <div className="px-8 py-12">
-            <h1 className="text-xl font-semibold text-gray-900">이미 응답하셨습니다</h1>
-            <p className="mt-2 text-sm text-gray-500">이 설문은 한 번만 응답할 수 있어요.</p>
-            <p className="mt-1 text-xs text-gray-400">참여해 주셔서 감사합니다.</p>
+            <h1 className="text-xl font-semibold tracking-[-0.45px] text-ink-900">이미 응답하셨습니다</h1>
+            <p className="mt-2 text-sm text-ink-500">이 설문은 한 번만 응답할 수 있어요.</p>
+            <p className="mt-1 text-xs text-ink-300">참여해 주셔서 감사합니다.</p>
           </div>
         </div>
       </div>
@@ -174,10 +174,10 @@ export function PublicForm({ form }: { form: PublicFormType }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-page">
       <div className="mx-auto w-full max-w-xl px-4 py-10">
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-          {!form.headerImageUrl && <div className="h-1.5 bg-brand" />}
+        <div className="overflow-hidden rounded-xl border border-line bg-white">
+          {!form.headerImageUrl && <div className="h-[5px] bg-brand" />}
           <div className={form.headerImageUrl ? 'p-7' : 'p-7 pb-6'}>
             {form.logoImageUrl && (
               <div className="mb-5 flex justify-center">
@@ -185,21 +185,21 @@ export function PublicForm({ form }: { form: PublicFormType }) {
                 <img src={resolveAssetUrl(form.logoImageUrl)} alt="" className="max-h-14 w-auto" />
               </div>
             )}
-            <h1 className="break-words text-xl font-semibold text-gray-900">{form.title}</h1>
+            <h1 className="break-words text-xl font-semibold tracking-[-0.45px] text-ink-900">{form.title}</h1>
             {form.quotaRemaining !== null && (
-              <p className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-brand-light px-3 py-1.5 text-sm text-brand-dark">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden />
+              <p className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-brand-light px-[11px] py-1.5 text-[13px] text-brand-dark">
+                <span className="h-[5px] w-[5px] rounded-full bg-brand" aria-hidden />
                 선착순 · 남은 수량 <b className="tabular-nums">{form.quotaRemaining.toLocaleString()}</b>개
               </p>
             )}
             {form.description && (
-              <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-500">
+              <p className="mt-2 whitespace-pre-wrap break-words text-[13.5px] leading-[1.7] text-ink-500">
                 {form.description}
               </p>
             )}
             {hasRequired && (
-              <p className="mt-2 text-xs text-gray-400">
-                <span className="text-red-500">*</span> 표시는 필수 항목입니다.
+              <p className="mt-2 text-xs text-ink-300">
+                <span className="text-danger-accent">*</span> 표시는 필수 항목입니다.
               </p>
             )}
           </div>
@@ -207,8 +207,8 @@ export function PublicForm({ form }: { form: PublicFormType }) {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={resolveAssetUrl(form.headerImageUrl)} alt="" className="h-auto w-full" />
           )}
-          <div className={form.headerImageUrl ? 'p-7' : 'mx-7 border-t border-gray-100 pb-7 pt-6'}>
-            <div className="flex flex-col gap-5">
+          <div className={form.headerImageUrl ? 'p-7' : 'mx-7 border-t border-line-soft pb-7 pt-[22px]'}>
+            <div className="flex flex-col gap-[22px]">
               {form.fields
                 .filter((field) => isFieldVisible(field, answers))
                 .map((field: FormField) => (
@@ -222,14 +222,22 @@ export function PublicForm({ form }: { form: PublicFormType }) {
                 ))}
             </div>
 
-            {formError && <p className="mt-6 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{formError}</p>}
+            {formError && (
+              <p className="mt-6 rounded-lg bg-danger-bg px-4 py-2 text-sm text-danger-fg">{formError}</p>
+            )}
 
-            <Button className="mt-8" fullWidth size="lg" onClick={onSubmit} loading={submitting}>
+            <Button
+              className="mt-[26px] rounded-[9px] text-[15px]"
+              fullWidth
+              size="lg"
+              onClick={onSubmit}
+              loading={submitting}
+            >
               제출하기
             </Button>
 
             {RECAPTCHA_ENABLED && (
-              <p className="mt-3 text-center text-[11px] leading-relaxed text-gray-400">
+              <p className="mt-3 text-center text-[11px] leading-[1.6] text-ink-300">
                 이 사이트는 reCAPTCHA로 보호되며 Google{' '}
                 <a
                   href="https://policies.google.com/privacy"
@@ -254,7 +262,7 @@ export function PublicForm({ form }: { form: PublicFormType }) {
           </div>
         </div>
 
-        <div className="pt-3 text-center text-xs text-gray-400">© {COPYRIGHT_YEAR} CoreSolution. All rights reserved.</div>
+        <div className="pt-3 text-center text-xs text-ink-300">© {COPYRIGHT_YEAR} CoreSolution. All rights reserved.</div>
       </div>
     </div>
   );

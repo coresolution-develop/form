@@ -22,8 +22,8 @@ export interface FieldRendererProps {
 
 const inputBase =
   'w-full h-[42px] px-3 text-sm border rounded-lg outline-none transition-colors ' +
-  'focus:border-brand focus:ring-2 focus:ring-brand/20 ' +
-  'disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed';
+  'focus:border-brand focus:shadow-focus ' +
+  'disabled:bg-surface-subtle disabled:text-ink-300 disabled:cursor-not-allowed';
 
 /**
  * #2 select 모드(SHORT): 입력란 + 드롭다운. 내부에서 text/selected를 관리하고
@@ -77,8 +77,8 @@ function SuffixSelectInput({
           emit(text, e.target.value);
         }}
         className={cn(
-          'h-[42px] shrink-0 rounded-lg border border-gray-300 px-2 text-sm outline-none',
-          'focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:bg-gray-50 disabled:text-gray-400',
+          'h-[42px] shrink-0 rounded-lg border border-line-input px-2 text-sm outline-none',
+          'focus:border-brand focus:shadow-focus disabled:bg-surface-subtle disabled:text-ink-300',
         )}
       >
         {options.map((o) => (
@@ -94,7 +94,7 @@ function SuffixSelectInput({
 export function FieldRenderer({ field, value, onChange, disabled, error }: FieldRendererProps) {
   const strValue = typeof value === 'string' ? value : '';
   const arrValue = Array.isArray(value) ? value : [];
-  const borderClass = error ? 'border-red-400' : 'border-gray-300';
+  const borderClass = error ? 'border-[1.5px] border-danger-accent' : 'border-line-input';
 
   // 글자수/숫자 범위 제약 안내 (응답자가 입력 전에 인지). 실제 검증은 기존 로직 유지.
   const hint = (() => {
@@ -134,7 +134,7 @@ export function FieldRenderer({ field, value, onChange, disabled, error }: Field
       'flex items-center gap-2.5 px-3 py-2.5 border rounded-lg text-sm',
       selected
         ? 'border-[1.5px] border-brand bg-brand-light text-brand-dark'
-        : 'border-gray-300 text-gray-700',
+        : 'border-[#cfd4da] text-ink-700',
       disabled ? 'cursor-default' : 'cursor-pointer',
     );
 
@@ -250,7 +250,7 @@ export function FieldRenderer({ field, value, onChange, disabled, error }: Field
           return (
             <div className="flex items-center gap-2">
               {inputEl}
-              <span className="whitespace-nowrap text-sm text-gray-600">{suffix}</span>
+              <span className="whitespace-nowrap text-sm text-ink-500">{suffix}</span>
             </div>
           );
         }
@@ -264,11 +264,11 @@ export function FieldRenderer({ field, value, onChange, disabled, error }: Field
       <label
         id={labelId}
         htmlFor={isGroup ? undefined : inputId}
-        className="mb-1.5 block text-sm font-medium text-gray-800"
+        className="mb-[9px] block text-sm font-medium text-ink-700"
       >
         {field.label}
         {field.required && (
-          <span className="ml-0.5 text-red-500" aria-label="필수">
+          <span className="ml-0.5 text-danger-accent" aria-label="필수">
             *
           </span>
         )}
@@ -277,21 +277,21 @@ export function FieldRenderer({ field, value, onChange, disabled, error }: Field
       {(hint || showCounter) && (
         <div className="mt-1 flex items-start justify-between gap-2">
           {hint ? (
-            <p id={hintId} className="text-xs text-gray-400">
+            <p id={hintId} className="text-xs text-ink-300">
               {hint}
             </p>
           ) : (
             <span />
           )}
           {showCounter && (
-            <span className="shrink-0 text-xs tabular-nums text-gray-400">
+            <span className="shrink-0 text-xs tabular-nums text-ink-300">
               {strValue.length}/{maxLen}
             </span>
           )}
         </div>
       )}
       {error && (
-        <p id={errorId} role="alert" className="mt-1 text-xs text-red-600">
+        <p id={errorId} role="alert" className="mt-1 text-xs text-danger-accent">
           {error}
         </p>
       )}
