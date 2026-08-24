@@ -9,7 +9,7 @@ import { cn } from '@/lib/cn';
 import { toUserMessage } from '@/lib/errorMessage';
 import type { FormDetail, HeaderImageStyle } from '@/types/form';
 
-const ACCEPT = ['image/png', 'image/jpeg', 'image/webp'];
+const ACCEPT = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
 const MAX_BYTES = 2 * 1024 * 1024;
 
 /** 빌더 폼 설정: 공개 폼 상단 헤더 이미지(로고/배너) 업로드·스타일·제거. */
@@ -28,7 +28,7 @@ export function HeaderImageSettings({ form }: { form: FormDetail }) {
     e.target.value = ''; // 같은 파일 재선택 허용
     if (!file) return;
     if (!ACCEPT.includes(file.type)) {
-      toast('PNG, JPG, WebP 이미지만 올릴 수 있어요.', 'error');
+      toast('PNG, JPG, WebP, GIF 이미지만 올릴 수 있어요.', 'error');
       return;
     }
     if (file.size > MAX_BYTES) {
@@ -64,7 +64,7 @@ export function HeaderImageSettings({ form }: { form: FormDetail }) {
         <div>
           <h2 className="text-sm font-semibold text-gray-800">헤더 이미지</h2>
           <p className="mt-0.5 text-xs text-gray-400">
-            공개 폼 상단에 로고나 배너를 표시합니다. PNG·JPG·WebP, 2MB 이하.
+            공개 폼 상단에 로고나 배너를 표시합니다. PNG·JPG·WebP·GIF, 2MB 이하.
           </p>
         </div>
         <div className="flex items-center gap-2">

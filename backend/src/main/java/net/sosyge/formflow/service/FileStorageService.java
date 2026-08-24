@@ -17,8 +17,8 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 파일시스템 기반 업로드 저장소. 이미지(PNG/JPG/WebP)만 허용하고 랜덤 파일명으로 저장한다.
- * SVG 는 스크립트 삽입(저장형 XSS) 위험이라 제외한다.
+ * 파일시스템 기반 업로드 저장소. 이미지(PNG/JPG/WebP/GIF)만 허용하고 랜덤 파일명으로 저장한다.
+ * SVG 는 스크립트 삽입(저장형 XSS) 위험이라 제외한다. GIF 는 스크립트 실행이 불가능해 허용한다.
  *
  * <p>디렉토리 생성 실패는 <b>앱 시작을 막지 않는다</b> — 업로드 시점에만 오류를 낸다.
  * (UPLOAD_DIR 미설정/권한 문제로 전체 서비스가 죽는 것을 방지.)
@@ -31,7 +31,8 @@ public class FileStorageService {
     private static final Map<String, String> ALLOWED = Map.of(
             "image/png", ".png",
             "image/jpeg", ".jpg",
-            "image/webp", ".webp"
+            "image/webp", ".webp",
+            "image/gif", ".gif"
     );
 
     private final Path root;
@@ -69,7 +70,7 @@ public class FileStorageService {
         }
         String ext = ALLOWED.get(file.getContentType());
         if (ext == null) {
-            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "PNG, JPG, WebP 이미지만 업로드할 수 있습니다.");
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "PNG, JPG, WebP, GIF 이미지만 업로드할 수 있습니다.");
         }
         String filename = UUID.randomUUID().toString().replace("-", "") + ext;
         Path target = root.resolve(filename).normalize();
