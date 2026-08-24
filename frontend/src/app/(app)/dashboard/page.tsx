@@ -58,21 +58,26 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-[1000px]">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">내 폼</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-[22px] font-semibold tracking-[-0.5px] text-ink-900">내 폼</h1>
+          <p className="text-[13px] text-ink-400">
             {total}/{FORM_LIMIT}개 사용 중
           </p>
         </div>
-        <Button onClick={onCreate} loading={createForm.isPending} disabled={atLimit}>
+        <Button
+          className="h-[38px] text-[13.5px]"
+          onClick={onCreate}
+          loading={createForm.isPending}
+          disabled={atLimit}
+        >
           + 새 폼 만들기
         </Button>
       </div>
 
       {atLimit && (
-        <p className="mb-4 rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-800">
+        <p className="mb-4 rounded-lg bg-warn-bg px-4 py-2 text-sm text-warn-fg">
           무료 플랜에서는 폼을 {FORM_LIMIT}개까지 만들 수 있습니다. 새 폼을 만들려면 기존 폼을 삭제해주세요.
         </p>
       )}
@@ -82,29 +87,46 @@ export default function DashboardPage() {
           <Spinner className="h-8 w-8" />
         </div>
       ) : !data || data.items.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-300 py-20 text-center">
-          <p className="text-gray-500">아직 만든 폼이 없습니다.</p>
-          <p className="mt-1 text-sm text-gray-400">‘새 폼 만들기’를 눌러 첫 폼을 만들어보세요.</p>
+        <div className="rounded-[10px] border border-dashed border-line-input py-9 text-center">
+          <p className="text-[13.5px] text-ink-400">아직 만든 폼이 없습니다.</p>
+          <p className="mt-1 text-[12.5px] text-ink-200">‘새 폼 만들기’를 눌러 첫 폼을 만들어보세요.</p>
         </div>
       ) : (
         <>
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
             {data.items.map((form) => (
-              <li key={form.id} className="flex flex-col rounded-xl border border-gray-200 bg-white p-4 transition-shadow hover:shadow-sm">
-                <div className="mb-2 flex items-center justify-between">
+              <li
+                key={form.id}
+                className="flex flex-col rounded-[10px] border border-line bg-white p-4 transition-colors hover:border-line-input"
+              >
+                <div className="mb-2.5 flex items-center justify-between">
                   <StatusBadge status={form.status} />
-                  <span className="text-xs text-gray-400">{form.createdAt?.slice(0, 10)}</span>
+                  <span className="text-[11.5px] text-ink-300">{form.createdAt?.slice(0, 10)}</span>
                 </div>
-                <h2 className="mb-1 line-clamp-2 font-semibold text-gray-900">{form.title}</h2>
-                <p className="mb-4 text-sm text-gray-500">
+                <h2 className="mb-1 line-clamp-2 text-[15px] font-semibold leading-[1.35] tracking-[-0.3px] text-ink-900">
+                  {form.title}
+                </h2>
+                <p className="text-[12.5px] tabular-nums text-ink-400">
                   응답 {form.responseCount}
                   {form.responseLimit ? ` / ${form.responseLimit}` : ''}
                 </p>
+                {form.responseLimit ? (
+                  <div className="mb-4 mt-2 h-1 overflow-hidden rounded-full bg-line-soft" aria-hidden>
+                    <div
+                      className={`h-full rounded-full ${form.status === 'CLOSED' ? 'bg-[#cfd4da]' : 'bg-brand'}`}
+                      style={{
+                        width: `${Math.min(100, (form.responseCount / form.responseLimit) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="mb-4" />
+                )}
                 {form.status === 'PUBLISHED' && (
                   <button
                     type="button"
                     onClick={() => copyUrl(form.slug)}
-                    className="mt-auto mb-2 rounded-lg bg-brand-light px-3 py-2 text-center text-sm font-medium text-brand-dark hover:bg-brand-light/70"
+                    className="mt-auto mb-2 rounded-[7px] bg-brand-light px-3 py-[7px] text-center text-[12.5px] font-medium text-brand-dark hover:bg-brand-light/70"
                   >
                     URL 복사
                   </button>
@@ -112,13 +134,13 @@ export default function DashboardPage() {
                 <div className={`${form.status === 'PUBLISHED' ? '' : 'mt-auto '}flex gap-2`}>
                   <Link
                     href={`/builder/${form.id}`}
-                    className="flex-1 rounded-lg bg-gray-100 px-3 py-2 text-center text-sm text-gray-800 hover:bg-gray-200"
+                    className="flex-1 rounded-[7px] bg-surface-fill px-3 py-[7px] text-center text-[12.5px] text-ink-700 hover:bg-surface-fill-hover"
                   >
                     편집
                   </Link>
                   <Link
                     href={`/forms/${form.id}/responses`}
-                    className="flex-1 rounded-lg bg-gray-100 px-3 py-2 text-center text-sm text-gray-800 hover:bg-gray-200"
+                    className="flex-1 rounded-[7px] bg-surface-fill px-3 py-[7px] text-center text-[12.5px] text-ink-700 hover:bg-surface-fill-hover"
                   >
                     응답보기
                   </Link>
@@ -135,7 +157,7 @@ export default function DashboardPage() {
               <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
                 이전
               </Button>
-              <span className="text-sm text-gray-500">{page}</span>
+              <span className="text-sm text-ink-400">{page}</span>
               <Button variant="secondary" size="sm" disabled={!data.hasNext} onClick={() => setPage((p) => p + 1)}>
                 다음
               </Button>
@@ -145,7 +167,7 @@ export default function DashboardPage() {
       )}
 
       <Modal open={!!toDelete} onClose={() => setToDelete(null)} title="폼 삭제">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-ink-500">
           ‘{toDelete?.title}’ 폼을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
         </p>
         <div className="mt-6 flex justify-end gap-2">

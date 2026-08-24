@@ -49,11 +49,11 @@ function ImageSlot({ title, hint, variant, url, uploading, removing, onPick, onR
   };
 
   return (
-    <div className="rounded-lg border border-gray-200 p-3">
+    <div className="rounded-lg border border-line p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 className="text-sm font-medium text-gray-800">{title}</h3>
-          <p className="mt-0.5 text-xs text-gray-400">{hint}</p>
+          <h3 className="text-sm font-medium text-ink-700">{title}</h3>
+          <p className="mt-0.5 text-xs text-ink-300">{hint}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="secondary" size="sm" onClick={() => inputRef.current?.click()} loading={uploading}>
@@ -70,7 +70,7 @@ function ImageSlot({ title, hint, variant, url, uploading, removing, onPick, onR
       <input ref={inputRef} type="file" accept={ACCEPT.join(',')} onChange={onFile} className="hidden" aria-hidden />
 
       {url && (
-        <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+        <div className="mt-3 overflow-hidden rounded-lg border border-line bg-surface-subtle">
           {variant === 'BANNER' ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={resolveAssetUrl(url)} alt={`${title} 미리보기`} className="h-auto w-full" />
@@ -100,9 +100,9 @@ export function HeaderImageSettings({ form }: { form: FormDetail }) {
   });
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
-      <h2 className="text-sm font-semibold text-gray-800">헤더 이미지</h2>
-      <p className="mt-0.5 text-xs text-gray-400">
+    <div className="rounded-xl border border-line bg-white p-4">
+      <h2 className="text-sm font-semibold text-ink-700">헤더 이미지</h2>
+      <p className="mt-0.5 text-xs text-ink-300">
         공개 폼 상단에 표시됩니다. 배너와 로고를 함께 쓸 수 있어요. PNG·JPG·WebP·GIF, 각 2MB 이하.
       </p>
 

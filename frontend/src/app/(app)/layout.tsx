@@ -30,7 +30,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <Header />
       <div className="flex flex-1">
         <Sidebar />
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 px-8 py-7">{children}</main>
       </div>
     </div>
   );

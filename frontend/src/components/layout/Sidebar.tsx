@@ -9,7 +9,7 @@ const ITEMS = [{ label: '내 폼', href: '/dashboard' }];
 export function Sidebar() {
   const pathname = usePathname();
   return (
-    <aside className="hidden w-48 shrink-0 border-r border-gray-200 bg-gray-50 p-4 sm:block">
+    <aside className="hidden w-[196px] shrink-0 border-r border-line-soft bg-surface-subtle px-3 py-3.5 sm:block">
       <nav className="flex flex-col gap-1">
         {ITEMS.map((item) => {
           const active = pathname === item.href || pathname.startsWith('/builder');
@@ -18,8 +18,8 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                'rounded-md px-3 py-2 text-sm',
-                active ? 'bg-brand-light font-medium text-brand-dark' : 'text-gray-700 hover:bg-gray-100',
+                'rounded-[7px] px-[11px] py-2 text-[13.5px]',
+                active ? 'bg-brand-light font-medium text-brand-dark' : 'text-ink-500 hover:bg-surface-fill',
               )}
             >
               {item.label}

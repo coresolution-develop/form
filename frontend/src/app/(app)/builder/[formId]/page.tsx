@@ -44,7 +44,7 @@ export default function BuilderPage() {
     );
   }
   if (isError || !form) {
-    return <p className="py-20 text-center text-gray-500">폼을 불러올 수 없습니다.</p>;
+    return <p className="py-20 text-center text-ink-400">폼을 불러올 수 없습니다.</p>;
   }
 
   const selectedField = form.fields.find((f) => f.id === selectedFieldId) ?? null;
@@ -64,10 +64,10 @@ export default function BuilderPage() {
   };
 
   return (
-    <div className="-m-6">
+    <div className="-mx-8 -my-7">
       <BuilderHeader form={form} previewMode={previewMode} onTogglePreview={togglePreview} />
 
-      <div className="p-6">
+      <div className="min-h-[calc(100vh-104px)] bg-surface-subtle px-7 py-6">
         {!previewMode && (
           <div className="mb-6 flex flex-col gap-4">
             <FormDescriptionEditor form={form} />
@@ -86,7 +86,7 @@ export default function BuilderPage() {
             />
           </div>
         ) : editMode ? (
-          <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+          <div className="grid gap-6 lg:grid-cols-[1fr_392px]">
             <section className="flex flex-col gap-4">
               <AddFieldMenu formId={formId} onCreated={(id) => select(id)} />
               <FieldList
@@ -98,19 +98,19 @@ export default function BuilderPage() {
               />
             </section>
 
-            <aside className="rounded-xl border border-gray-200 bg-white p-4">
+            <aside className="rounded-[10px] border border-line bg-white p-5">
               {selectedField ? (
                 <FieldEditorPanel formId={formId} field={selectedField} fields={form.fields} />
               ) : (
-                <p className="py-12 text-center text-sm text-gray-400">편집할 필드를 선택하세요.</p>
+                <p className="py-12 text-center text-sm text-ink-300">편집할 필드를 선택하세요.</p>
               )}
             </aside>
           </div>
         ) : (
           <div className="mx-auto max-w-2xl">
-            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div className="mb-4 rounded-lg border border-warn-fg/20 bg-warn-bg px-4 py-3 text-sm text-warn-fg">
               <p className="font-medium">발행된 폼은 질문을 수정할 수 없습니다. 질문을 바꾸려면 새 폼을 만들어 주세요.</p>
-              <p className="mt-1 text-xs text-amber-700">
+              <p className="mt-1 text-xs text-warn-fg">
                 이미 수집된 응답·통계의 정합성을 위해 발행 후에는 질문 구조가 잠깁니다.
               </p>
             </div>
@@ -126,7 +126,7 @@ export default function BuilderPage() {
       </div>
 
       <Modal open={!!toDelete} onClose={() => setToDelete(null)} title="필드 삭제">
-        <p className="text-sm text-gray-600">‘{toDelete?.label}’ 필드를 삭제하시겠습니까?</p>
+        <p className="text-sm text-ink-500">‘{toDelete?.label}’ 필드를 삭제하시겠습니까?</p>
         <div className="mt-6 flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setToDelete(null)}>
             취소

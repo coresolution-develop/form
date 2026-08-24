@@ -24,7 +24,7 @@ export function Header() {
   };
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-6">
+    <header className="flex h-[52px] items-center justify-between border-b border-line-soft bg-white px-6">
       <Link href="/dashboard" aria-label="FormFlow 대시보드">
         <Logo markSize={19} wordmarkClassName="text-[15px]" />
       </Link>
@@ -32,12 +32,12 @@ export function Header() {
         {isAdmin && (
           <Link
             href="/admin"
-            className="rounded-md bg-purple-50 px-2.5 py-1 text-sm font-medium text-purple-700 hover:bg-purple-100"
+            className="rounded-md bg-admin-bg px-2.5 py-1 text-xs font-medium text-admin-fg hover:opacity-80"
           >
             관리자
           </Link>
         )}
-        {user && <span className="text-sm text-gray-600">{user.nickname}님</span>}
+        {user && <span className="text-[13px] text-ink-500">{user.nickname}님</span>}
         <Button variant="ghost" size="sm" onClick={onLogout} loading={loading}>
           로그아웃
         </Button>

@@ -29,11 +29,11 @@ export function FormDescriptionEditor({ form }: { form: FormDetail }) {
   };
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
-      <label htmlFor="form-description" className="text-sm font-semibold text-gray-800">
+    <div className="rounded-xl border border-line bg-white p-4">
+      <label htmlFor="form-description" className="text-sm font-semibold text-ink-700">
         폼 설명
       </label>
-      <p className="mt-0.5 text-xs text-gray-400">공개 폼에서 제목 아래에 보이는 안내 문구입니다. (선택)</p>
+      <p className="mt-0.5 text-xs text-ink-300">공개 폼에서 제목 아래에 보이는 안내 문구입니다. (선택)</p>
       <textarea
         id="form-description"
         value={value}
@@ -41,7 +41,7 @@ export function FormDescriptionEditor({ form }: { form: FormDetail }) {
         onBlur={save}
         rows={3}
         placeholder="예: 서비스 이용 경험에 대한 의견을 들려주세요. 약 1분이면 완료됩니다."
-        className="mt-3 w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm leading-relaxed text-gray-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+        className="mt-3 w-full resize-none rounded-lg border border-line-input px-3 py-2 text-sm leading-relaxed text-ink-900 outline-none focus:border-brand focus:shadow-focus"
       />
     </div>
   );

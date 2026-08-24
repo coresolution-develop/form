@@ -222,8 +222,8 @@ export function FieldEditorPanel({ formId, field, fields }: Props) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-gray-900">필드 편집</h3>
-        <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+        <h3 className="font-semibold text-ink-900">필드 편집</h3>
+        <span className="rounded bg-surface-fill px-2 py-0.5 text-xs text-ink-500">
           {FIELD_TYPE_LABELS[field.type]}
         </span>
       </div>
@@ -255,7 +255,7 @@ export function FieldEditorPanel({ formId, field, fields }: Props) {
 
       {isChoice && (
         <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-gray-800">선택지</span>
+          <span className="text-sm font-medium text-ink-700">선택지</span>
           {options.map((opt, i) => (
             <div key={i} className="flex items-center gap-2">
               <div className="flex-1">
@@ -298,13 +298,13 @@ export function FieldEditorPanel({ formId, field, fields }: Props) {
       )}
 
       {field.type === 'SHORT' && (
-        <div className="flex flex-col gap-2 rounded-lg border border-gray-200 p-3">
-          <label className="text-sm font-medium text-gray-800">뒷부분(접미사)</label>
+        <div className="flex flex-col gap-2 rounded-lg border border-line p-3">
+          <label className="text-sm font-medium text-ink-700">뒷부분(접미사)</label>
           <select
             value={suffixMode}
             onChange={(e) => changeSuffixMode(e.target.value as 'none' | 'fixed' | 'select')}
             aria-label="접미사 모드"
-            className="h-10 rounded-lg border border-gray-300 px-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
+            className="h-10 rounded-lg border border-line-input px-2 text-sm focus:border-brand focus:outline-none focus:shadow-focus"
           >
             <option value="none">없음</option>
             <option value="fixed">고정 텍스트</option>
@@ -323,7 +323,7 @@ export function FieldEditorPanel({ formId, field, fields }: Props) {
 
           {suffixMode === 'select' && (
             <div className="flex flex-col gap-2">
-              <p className="text-xs text-gray-500">응답자가 입력란 뒤에서 고를 옵션 (예: 고등학교 / 중학교).</p>
+              <p className="text-xs text-ink-400">응답자가 입력란 뒤에서 고를 옵션 (예: 고등학교 / 중학교).</p>
               {suffixOptions.map((opt, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <div className="flex-1">
@@ -368,7 +368,7 @@ export function FieldEditorPanel({ formId, field, fields }: Props) {
       )}
 
       {(candidates.length > 0 || condFieldId != null) && (
-        <div className="flex flex-col gap-2 rounded-lg border border-gray-200 p-3">
+        <div className="flex flex-col gap-2 rounded-lg border border-line p-3">
           <Checkbox
             label="조건부로 표시 (앞의 객관식 답변에 따라)"
             checked={condFieldId != null}
@@ -377,15 +377,15 @@ export function FieldEditorPanel({ formId, field, fields }: Props) {
           {condFieldId != null && (
             <div className="flex flex-col gap-2">
               {candidates.length === 0 ? (
-                <p className="text-xs text-red-600">기준 질문이 없어졌습니다. 조건을 꺼주세요.</p>
+                <p className="text-xs text-danger-accent">기준 질문이 없어졌습니다. 조건을 꺼주세요.</p>
               ) : (
                 <>
-                  <label className="text-xs text-gray-500">기준 질문</label>
+                  <label className="text-xs text-ink-400">기준 질문</label>
                   <select
                     value={condFieldId ?? ''}
                     onChange={(e) => changeCondField(Number(e.target.value))}
                     aria-label="조건 기준 질문"
-                    className="h-10 rounded-lg border border-gray-300 px-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
+                    className="h-10 rounded-lg border border-line-input px-2 text-sm focus:border-brand focus:outline-none focus:shadow-focus"
                   >
                     {candidates.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -393,10 +393,10 @@ export function FieldEditorPanel({ formId, field, fields }: Props) {
                       </option>
                     ))}
                   </select>
-                  <p className="text-xs text-gray-500">아래 답을 선택했을 때만 이 필드를 표시합니다.</p>
+                  <p className="text-xs text-ink-400">아래 답을 선택했을 때만 이 필드를 표시합니다.</p>
                   <div className="flex flex-col gap-1">
                     {(condField?.options ?? []).map((opt) => (
-                      <label key={opt} className="flex items-center gap-2 text-sm text-gray-700">
+                      <label key={opt} className="flex items-center gap-2 text-sm text-ink-700">
                         <input
                           type="checkbox"
                           checked={condValues.includes(opt)}
@@ -408,7 +408,7 @@ export function FieldEditorPanel({ formId, field, fields }: Props) {
                     ))}
                   </div>
                   {condValues.length === 0 && (
-                    <p className="text-xs text-amber-600">표시할 답을 1개 이상 선택하세요.</p>
+                    <p className="text-xs text-warn-fg">표시할 답을 1개 이상 선택하세요.</p>
                   )}
                 </>
               )}

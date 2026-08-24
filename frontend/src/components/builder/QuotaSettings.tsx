@@ -62,15 +62,15 @@ export function QuotaSettings({ form }: { form: FormDetail }) {
   const remaining = form.quotaTotal === null ? null : Math.max(0, form.quotaTotal - form.quotaUsed);
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
+    <div className="rounded-xl border border-line bg-white p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-sm font-semibold text-gray-800">선착순 수량</h2>
-          <p className="mt-0.5 text-xs text-gray-400">
+          <h2 className="text-sm font-semibold text-ink-700">선착순 수량</h2>
+          <p className="mt-0.5 text-xs text-ink-300">
             정해둔 수량이 다 차면 폼이 자동으로 마감됩니다.
           </p>
         </div>
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-700">
           <input
             type="checkbox"
             checked={enabled}
@@ -84,13 +84,13 @@ export function QuotaSettings({ form }: { form: FormDetail }) {
       {enabled && (
         <div className="mt-4 flex flex-col gap-3">
           {candidates.length === 0 ? (
-            <p className="rounded-lg bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-800">
+            <p className="rounded-lg bg-warn-bg px-3 py-2.5 text-xs leading-relaxed text-warn-fg">
               수량으로 쓸 필드가 없습니다. <b>필수로 지정된 숫자 필드</b>를 먼저 만들어주세요. (예: &ldquo;매수&rdquo;)
             </p>
           ) : (
             <>
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="quota-total" className="text-xs text-gray-500">
+                <label htmlFor="quota-total" className="text-xs text-ink-400">
                   총 수량
                 </label>
                 <input
@@ -100,12 +100,12 @@ export function QuotaSettings({ form }: { form: FormDetail }) {
                   value={total}
                   onChange={(e) => setTotal(e.target.value)}
                   placeholder="예: 200"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm tabular-nums outline-none focus:border-brand"
+                  className="w-full rounded-lg border border-line-input px-3 py-2 text-sm tabular-nums outline-none focus:border-brand"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="quota-field" className="text-xs text-gray-500">
+                <label htmlFor="quota-field" className="text-xs text-ink-400">
                   수량 필드 — 이 값만큼 차감됩니다
                 </label>
                 <select
@@ -113,7 +113,7 @@ export function QuotaSettings({ form }: { form: FormDetail }) {
                   value={fieldId}
                   onChange={(e) => setFieldId(e.target.value)}
                   disabled={form.quotaUsed > 0}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand disabled:bg-gray-50 disabled:text-gray-400"
+                  className="w-full rounded-lg border border-line-input px-3 py-2 text-sm outline-none focus:border-brand disabled:bg-surface-subtle disabled:text-ink-300"
                 >
                   <option value="">선택하세요</option>
                   {candidates.map((f) => (
@@ -123,14 +123,14 @@ export function QuotaSettings({ form }: { form: FormDetail }) {
                   ))}
                 </select>
                 {form.quotaUsed > 0 && (
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-ink-300">
                     이미 접수가 시작돼 수량 필드는 바꿀 수 없습니다.
                   </p>
                 )}
               </div>
 
               {remaining !== null && (
-                <p className="rounded-lg bg-gray-50 px-3 py-2 text-xs tabular-nums text-gray-600">
+                <p className="rounded-lg bg-surface-subtle px-3 py-2 text-xs tabular-nums text-ink-500">
                   {form.quotaUsed.toLocaleString()}개 접수 · 남은 수량{' '}
                   <b className="text-brand-dark">{remaining.toLocaleString()}</b>개
                 </p>

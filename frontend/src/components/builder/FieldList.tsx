@@ -43,7 +43,7 @@ export function FieldList({ formId, fields, selectedId, onSelect, onDelete }: Pr
 
   if (fields.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-gray-300 py-12 text-center text-sm text-gray-400">
+      <div className="rounded-lg border border-dashed border-line-input py-12 text-center text-sm text-ink-300">
         아직 필드가 없습니다. 오른쪽에서 필드를 추가해보세요.
       </div>
     );
@@ -73,8 +73,12 @@ export function FieldList({ formId, fields, selectedId, onSelect, onDelete }: Pr
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <div className="flex items-center justify-between px-0.5">
+        <span className="text-xs font-semibold text-ink-400">필드 {fields.length}개</span>
+        <span className="text-xs text-ink-200">드래그하여 순서 변경</span>
+      </div>
       <SortableContext items={fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-[7px]">
           {fields.map((field) => (
             <li key={field.id}>
               <FieldItem
