@@ -25,7 +25,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -72,6 +75,91 @@ public class FormService {
         }
 
         return getDetail(userId, form.getId());
+    }
+
+    /**
+     * 폼 복제 — 폼 메타 + 필드를 깊은 복사해 새 DRAFT 를 만든다(D-017의 출구: 복제 → 수정 → 재발행).
+     * 응답·통계·마감 시각·소진 수량은 복사하지 않는다. 이미지는 파일까지 물리 복사해 원본과 수명을 분리한다.
+     */
+    @Transactional
+    public FormDetailResponse duplicate(Long userId, Long formId) {
+        Form src = loadOwnedForm(userId, formId);
+        long count = formMapper.countActiveByUserId(userId);
+        if (count >= limits.getFormsPerUser()) {
+            throw new BusinessException(ErrorCode.PLAN_LIMIT_EXCEEDED,
+                    "무료 플랜에서는 폼을 " + limits.getFormsPerUser() + "개까지 만들 수 있습니다.");
+        }
+
+        String title = src.getTitle() + " (사본)";
+        if (title.length() > 255) {
+            title = title.substring(0, 255);
+        }
+
+        Form copy = Form.builder()
+                .userId(userId)
+                .slug(generateUniqueSlug())
+                .title(title)
+                .description(src.getDescription())
+                .status(FormStatus.DRAFT)
+                .responseLimit(src.getResponseLimit())
+                .build();
+        formMapper.insert(copy);
+
+        String header = fileStorageService.copyByUrl(src.getHeaderImageUrl());
+        if (header != null) {
+            formMapper.updateHeaderImage(copy.getId(), apiUrl + "/uploads/" + header);
+        }
+        String logo = fileStorageService.copyByUrl(src.getLogoImageUrl());
+        if (logo != null) {
+            formMapper.updateLogoImage(copy.getId(), apiUrl + "/uploads/" + logo);
+        }
+
+        // 필드 깊은 복사 + 구필드 id → 신필드 id 매핑
+        List<FormField> fields = fieldMapper.findByFormIdOrderByOrderNum(formId);
+        Map<Long, Long> idMap = new HashMap<>();
+        List<FormField> copies = new ArrayList<>();
+        for (FormField f : fields) {
+            FormField c = FormField.builder()
+                    .formId(copy.getId())
+                    .type(f.getType())
+                    .label(f.getLabel())
+                    .placeholder(f.getPlaceholder())
+                    .required(f.isRequired())
+                    .orderNum(f.getOrderNum())
+                    .options(f.getOptions())
+                    .validation(f.getValidation() == null ? null : new HashMap<>(f.getValidation()))
+                    .build();
+            fieldMapper.insert(c);
+            idMap.put(f.getId(), c.getId());
+            copies.add(c);
+        }
+
+        // 조건부 표시(validation.condition.fieldId)가 구필드 id 를 가리키므로 신필드 id 로 리매핑
+        for (FormField c : copies) {
+            Map<String, Object> validation = c.getValidation();
+            if (validation == null || !(validation.get("condition") instanceof Map<?, ?> condRaw)) {
+                continue;
+            }
+            Map<String, Object> cond = new HashMap<>();
+            condRaw.forEach((k, v) -> cond.put(String.valueOf(k), v));
+            if (cond.get("fieldId") instanceof Number oldId && idMap.get(oldId.longValue()) != null) {
+                cond.put("fieldId", idMap.get(oldId.longValue()));
+                validation.put("condition", cond);
+            } else {
+                validation.remove("condition"); // 원본에서 이미 깨진 참조면 조건 자체를 제거
+            }
+            fieldMapper.updateField(c);
+        }
+
+        // 선착순 설정 복사(수량 필드는 신필드 id 로). 소진량(quota_used)은 0에서 시작.
+        if (src.getQuotaTotal() != null && src.getQuotaFieldId() != null) {
+            Long mappedQuotaField = idMap.get(src.getQuotaFieldId());
+            if (mappedQuotaField != null) {
+                formMapper.updateQuotaConfig(copy.getId(), src.getQuotaTotal(), mappedQuotaField);
+            }
+        }
+
+        return getDetail(userId, copy.getId());
     }
 
     @Transactional(readOnly = true)

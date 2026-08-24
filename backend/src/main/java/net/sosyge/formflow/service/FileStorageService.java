@@ -86,6 +86,36 @@ public class FileStorageService {
         return filename;
     }
 
+    /**
+     * URL(…/uploads/{name}) 기준으로 파일을 새 랜덤 이름으로 물리 복사하고 새 파일명을 반환.
+     * 사본이 원본 파일과 수명을 공유하지 않게 하기 위함(원본 폼 이미지 교체/삭제 시 사본이 깨지는 것 방지).
+     * 원본이 없거나 복사에 실패하면 null (복제 흐름을 막지 않는다).
+     */
+    public String copyByUrl(String url) {
+        if (url == null || url.isBlank()) {
+            return null;
+        }
+        String name = url.substring(url.lastIndexOf('/') + 1);
+        if (name.isBlank()) {
+            return null;
+        }
+        Path source = root.resolve(name).normalize();
+        if (!source.getParent().equals(root) || !Files.exists(source)) {
+            return null;
+        }
+        int dot = name.lastIndexOf('.');
+        String ext = dot >= 0 ? name.substring(dot) : "";
+        String filename = UUID.randomUUID().toString().replace("-", "") + ext;
+        ensureDir();
+        try {
+            Files.copy(source, root.resolve(filename), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            log.warn("[UPLOAD] 이미지 복사 실패(복제는 계속 진행): {} - {}", name, e.getMessage());
+            return null;
+        }
+        return filename;
+    }
+
     /** URL(…/uploads/{name}) 또는 파일명 기준으로 삭제. 없으면 조용히 무시. */
     public void deleteByUrl(String url) {
         if (url == null || url.isBlank()) {

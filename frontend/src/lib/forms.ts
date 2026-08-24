@@ -36,6 +36,12 @@ export async function deleteForm(id: number): Promise<void> {
   await api.delete(`/api/forms/${id}`);
 }
 
+/** 폼 복제 — 폼+필드 깊은 복사로 새 DRAFT 생성 (응답·통계는 복사하지 않음). */
+export async function duplicateForm(id: number): Promise<FormDetail> {
+  const res = await api.post(`/api/forms/${id}/duplicate`);
+  return res.data.data as FormDetail;
+}
+
 /** 배너 이미지 업로드/교체 (multipart, 상단 전체폭). */
 export async function uploadHeaderImage(id: number, file: File): Promise<FormDetail> {
   const fd = new FormData();

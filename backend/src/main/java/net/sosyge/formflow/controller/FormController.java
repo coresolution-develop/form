@@ -50,6 +50,15 @@ public class FormController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(data));
     }
 
+    /** 폼 복제 — 폼+필드 깊은 복사로 새 DRAFT 생성 (응답·통계는 복사하지 않음). */
+    @PostMapping("/{id}/duplicate")
+    public ResponseEntity<ApiResponse<FormDetailResponse>> duplicate(
+            @CurrentUser CustomUserDetails user,
+            @PathVariable Long id) {
+        FormDetailResponse data = formService.duplicate(user.getId(), id);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(data));
+    }
+
     @GetMapping("/{id}")
     public ApiResponse<FormDetailResponse> detail(@CurrentUser CustomUserDetails user,
                                                   @PathVariable Long id) {

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Spinner } from '@/components/ui/Spinner';
 import { useToast } from '@/components/ui/Toast';
-import { useCreateForm, useDeleteForm, useFormList } from '@/hooks/useForms';
+import { useCreateForm, useDeleteForm, useDuplicateForm, useFormList } from '@/hooks/useForms';
 import { toUserMessage } from '@/lib/errorMessage';
 import type { FormSummary } from '@/types/form';
 
@@ -21,7 +21,10 @@ export default function DashboardPage() {
   const { data, isLoading } = useFormList(page);
   const createForm = useCreateForm();
   const deleteForm = useDeleteForm();
+  const duplicateForm = useDuplicateForm();
   const [toDelete, setToDelete] = useState<FormSummary | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [sourceId, setSourceId] = useState<number | ''>('');
 
   const total = data?.total ?? 0;
   const atLimit = total >= FORM_LIMIT;
@@ -34,6 +37,17 @@ export default function DashboardPage() {
         onError: (e: any) => toast(toUserMessage(e?.response?.data?.code, '폼 생성 실패'), 'error'),
       },
     );
+  };
+
+  const onDuplicate = (id: number) => {
+    duplicateForm.mutate(id, {
+      onSuccess: (form) => {
+        toast('폼을 복제했습니다. 사본을 편집하세요.', 'success');
+        setCreateOpen(false);
+        router.push(`/builder/${form.id}`);
+      },
+      onError: (e: any) => toast(toUserMessage(e?.response?.data?.code, '폼 복제 실패'), 'error'),
+    });
   };
 
   const onDelete = () => {
@@ -68,7 +82,7 @@ export default function DashboardPage() {
         </div>
         <Button
           className="h-[38px] text-[13.5px]"
-          onClick={onCreate}
+          onClick={() => (total === 0 ? onCreate() : setCreateOpen(true))}
           loading={createForm.isPending}
           disabled={atLimit}
         >
@@ -144,6 +158,16 @@ export default function DashboardPage() {
                   >
                     응답보기
                   </Link>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onDuplicate(form.id)}
+                    loading={duplicateForm.isPending && duplicateForm.variables === form.id}
+                    disabled={atLimit}
+                    title={atLimit ? '폼 개수 한도에 도달해 복제할 수 없습니다.' : undefined}
+                  >
+                    복제
+                  </Button>
                   <Button variant="ghost" size="sm" onClick={() => setToDelete(form)}>
                     삭제
                   </Button>
@@ -165,6 +189,54 @@ export default function DashboardPage() {
           )}
         </>
       )}
+
+      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="새 폼 만들기">
+        <Button
+          fullWidth
+          onClick={() => {
+            setCreateOpen(false);
+            onCreate();
+          }}
+          loading={createForm.isPending}
+        >
+          빈 폼으로 시작
+        </Button>
+
+        <div className="my-5 flex items-center gap-3" aria-hidden>
+          <span className="h-px flex-1 bg-line-soft" />
+          <span className="text-xs text-ink-300">또는 기존 폼 복사</span>
+          <span className="h-px flex-1 bg-line-soft" />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <select
+            value={sourceId}
+            onChange={(e) => setSourceId(e.target.value === '' ? '' : Number(e.target.value))}
+            aria-label="복사할 폼 선택"
+            className="h-10 rounded-lg border border-line-input bg-white px-3 text-sm text-ink-900 focus:border-brand focus:shadow-focus focus:outline-none"
+          >
+            <option value="">복사할 폼 선택</option>
+            {data?.items.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.title}
+              </option>
+            ))}
+          </select>
+          <Button
+            variant="secondary"
+            fullWidth
+            disabled={sourceId === ''}
+            loading={duplicateForm.isPending}
+            onClick={() => sourceId !== '' && onDuplicate(sourceId)}
+          >
+            복사해서 시작
+          </Button>
+        </div>
+
+        <p className="mt-3 text-xs text-ink-300">
+          제목·설명·질문 구성과 이미지가 복사됩니다. 응답과 통계는 복사되지 않습니다.
+        </p>
+      </Modal>
 
       <Modal open={!!toDelete} onClose={() => setToDelete(null)} title="폼 삭제">
         <p className="text-sm text-ink-500">

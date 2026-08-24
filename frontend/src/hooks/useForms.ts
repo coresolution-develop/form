@@ -5,6 +5,7 @@ import {
   createForm,
   deleteForm,
   deleteHeaderImage,
+  duplicateForm,
   deleteLogoImage,
   getForm,
   listForms,
@@ -56,6 +57,14 @@ export function useUpdateForm(id: number) {
       qc.invalidateQueries({ queryKey: formKeys.detail(id) });
       qc.invalidateQueries({ queryKey: formKeys.all });
     },
+  });
+}
+
+export function useDuplicateForm() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => duplicateForm(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.all }),
   });
 }
 
