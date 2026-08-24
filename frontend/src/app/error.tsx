@@ -24,7 +24,7 @@ export default function GlobalError({
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-50 px-4 text-center">
-      <h1 className="text-2xl font-bold text-gray-900">문제가 발생했습니다</h1>
+      <h1 className="text-2xl font-semibold text-gray-900">문제가 발생했습니다</h1>
       <p className="text-sm text-gray-600">잠시 후 다시 시도해주세요.</p>
       <Button onClick={reset} className="mt-2">
         다시 시도

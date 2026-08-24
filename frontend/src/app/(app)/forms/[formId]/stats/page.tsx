@@ -72,7 +72,7 @@ export default function StatsPage() {
           <Link href={`/forms/${formId}/responses`} className="text-sm text-gray-500 hover:text-gray-800">
             ← 응답 목록
           </Link>
-          <h1 className="mt-1 text-2xl font-bold text-gray-900">{form.title} · 통계</h1>
+          <h1 className="mt-1 text-2xl font-semibold text-gray-900">{form.title} · 통계</h1>
         </div>
         <Button
           variant="secondary"
@@ -94,7 +94,7 @@ export default function StatsPage() {
             {summaryCells.map((c) => (
               <div key={c.label} className="rounded-xl border border-gray-200 bg-white px-4 py-4 text-center">
                 <div className="text-xs text-gray-500">{c.label}</div>
-                <div className="mt-1 text-xl font-bold tabular-nums text-brand-dark sm:text-2xl">{c.value}</div>
+                <div className="mt-1 text-xl font-semibold tabular-nums text-brand-dark sm:text-2xl">{c.value}</div>
               </div>
             ))}
           </div>

@@ -140,7 +140,7 @@ function AnalyzeMock() {
     <MockCanvas>
       <MockCard className="flex items-center justify-between">
         <span className="text-[11px] text-gray-500">총 응답</span>
-        <span className="text-base font-bold text-gray-900">128</span>
+        <span className="text-base font-semibold text-gray-900">128</span>
       </MockCard>
 
       <MockCard className="space-y-2">
@@ -187,7 +187,7 @@ export function HowItWorks() {
       <div className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
         <div className="mx-auto max-w-2xl text-center">
           <span className="text-sm font-semibold text-brand-dark">사용법</span>
-          <h2 className="mt-2 text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-gray-900 md:text-3xl">
             세 단계면 끝납니다
           </h2>
           <p className="mt-3 text-base text-gray-600">
@@ -202,7 +202,7 @@ export function HowItWorks() {
               className="flex flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-transform duration-200 hover:-translate-y-1 motion-reduce:transform-none motion-reduce:transition-none"
             >
               <div className="flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-white">
                   {step.id}
                 </span>
                 <h3 className="text-lg font-semibold text-gray-900">{step.title}</h3>

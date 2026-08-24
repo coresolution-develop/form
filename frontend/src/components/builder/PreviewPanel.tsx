@@ -23,7 +23,7 @@ export function PreviewPanel({ title, description, fields, headerImageUrl, logoI
             <img src={resolveAssetUrl(logoImageUrl)} alt="" className="max-h-14 w-auto" />
           </div>
         )}
-        <h2 className="break-words text-xl font-bold text-gray-900">{title}</h2>
+        <h2 className="break-words text-xl font-semibold text-gray-900">{title}</h2>
         {description && (
           <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-600">{description}</p>
         )}

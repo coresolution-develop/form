@@ -72,7 +72,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">사용자 관리</h1>
+      <h1 className="text-2xl font-semibold text-gray-900">사용자 관리</h1>
 
       {/* 필터 */}
       <div className="flex flex-wrap items-center gap-3">

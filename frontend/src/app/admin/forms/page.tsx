@@ -54,7 +54,7 @@ export default function AdminFormsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">폼 관리</h1>
+      <h1 className="text-2xl font-semibold text-gray-900">폼 관리</h1>
 
       <form onSubmit={onSearch} className="flex items-center gap-2">
         <Input

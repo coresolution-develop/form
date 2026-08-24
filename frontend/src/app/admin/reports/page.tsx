@@ -66,7 +66,7 @@ export default function AdminReportsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">신고 처리</h1>
+      <h1 className="text-2xl font-semibold text-gray-900">신고 처리</h1>
 
       <div className="flex flex-wrap items-center gap-2">
         {STATUS_FILTERS.map((s) => (

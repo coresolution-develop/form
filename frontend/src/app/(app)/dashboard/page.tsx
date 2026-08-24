@@ -61,7 +61,7 @@ export default function DashboardPage() {
     <div className="mx-auto max-w-5xl">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">내 폼</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">내 폼</h1>
           <p className="text-sm text-gray-500">
             {total}/{FORM_LIMIT}개 사용 중
           </p>

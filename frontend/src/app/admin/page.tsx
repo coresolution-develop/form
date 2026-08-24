@@ -23,7 +23,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
-      <h1 className="text-2xl font-bold text-gray-900">관리자 대시보드</h1>
+      <h1 className="text-2xl font-semibold text-gray-900">관리자 대시보드</h1>
 
       {/* 위젯 카드 */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

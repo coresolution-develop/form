@@ -41,7 +41,7 @@ export default function Home() {
               <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-brand" />
               무료로 시작 · 신용카드 불필요
             </span>
-            <h1 className="text-4xl font-bold leading-tight tracking-tight text-gray-900 md:text-5xl">
+            <h1 className="text-4xl font-semibold leading-tight tracking-tight text-gray-900 md:text-5xl">
               5분이면 충분한
               <br />
               온라인 설문·신청 폼
@@ -67,7 +67,7 @@ export default function Home() {
         {/* 마무리 CTA */}
         <section className="border-t border-gray-100 bg-brand-light">
           <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-5 px-4 py-16 text-center">
-            <h2 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">
+            <h2 className="text-2xl font-semibold tracking-tight text-gray-900 md:text-3xl">
               지금 바로 첫 폼을 만들어보세요
             </h2>
             <p className="text-base text-gray-600">

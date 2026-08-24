@@ -14,6 +14,7 @@ body {
   padding: 0;
   margin: 0;
   font-family: var(--font-sans);
+  color: #16181d; /* ink-900 — 본문 1차 (디자인 핸드오프 토큰) */
 }
 
 /* number input 스피너 제거 */

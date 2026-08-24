@@ -20,7 +20,7 @@ export function StatCard({ label, value, highlight }: Props) {
       <p className="text-sm text-gray-500">{label}</p>
       <p
         className={cn(
-          'mt-2 text-3xl font-bold',
+          'mt-2 text-3xl font-semibold',
           highlight && value > 0 ? 'text-red-600' : 'text-gray-900',
         )}
       >

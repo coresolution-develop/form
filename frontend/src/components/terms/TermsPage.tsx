@@ -28,13 +28,13 @@ export function TermsPage({ type }: { type: TermsType }) {
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-12">
-      <h1 className="text-2xl font-bold text-gray-900">{terms.title}</h1>
+      <h1 className="text-2xl font-semibold text-gray-900">{terms.title}</h1>
       <p className="mt-1 text-xs text-gray-400">
         버전 {terms.version}
         {terms.effectiveAt ? ` · 시행일 ${terms.effectiveAt.slice(0, 10)}` : ''}
       </p>
       <article
-        className="prose-sm mt-6 leading-relaxed text-gray-800 [&_h1]:mt-6 [&_h1]:text-xl [&_h1]:font-bold [&_h2]:mt-5 [&_h2]:text-base [&_h2]:font-semibold [&_li]:ml-5 [&_li]:list-disc [&_p]:mt-2"
+        className="prose-sm mt-6 leading-relaxed text-gray-800 [&_h1]:mt-6 [&_h1]:text-xl [&_h1]:font-semibold [&_h2]:mt-5 [&_h2]:text-base [&_h2]:font-semibold [&_li]:ml-5 [&_li]:list-disc [&_p]:mt-2"
         dangerouslySetInnerHTML={{ __html: terms.contentHtml }}
       />
     </main>

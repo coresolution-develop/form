@@ -54,7 +54,7 @@ export default function ResponsesPage() {
           <Link href="/dashboard" className="text-sm text-gray-500 hover:text-gray-800">
             ← 대시보드
           </Link>
-          <h1 className="mt-1 text-2xl font-bold text-gray-900">{form.title}</h1>
+          <h1 className="mt-1 text-2xl font-semibold text-gray-900">{form.title}</h1>
           <p className="text-sm text-gray-500">총 {data.total}개 응답</p>
         </div>
         <div className="flex items-center gap-2">
