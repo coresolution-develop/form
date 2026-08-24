@@ -50,6 +50,20 @@ export default function StatsPage() {
   }
 
   const hasChartData = stats.fields.some((f) => f.distribution && f.distribution.length > 0);
+  const avgAnswerRate =
+    stats.totalResponses > 0 && stats.fields.length > 0
+      ? Math.round(
+          (stats.fields.reduce((sum, f) => sum + f.answeredCount, 0) /
+            stats.fields.length /
+            stats.totalResponses) *
+            100,
+        )
+      : 0;
+  const summaryCells = [
+    { label: '총 응답', value: stats.totalResponses.toLocaleString() },
+    { label: '질문 수', value: stats.fields.length.toLocaleString() },
+    { label: '평균 응답률', value: `${avgAnswerRate}%` },
+  ];
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -59,7 +73,6 @@ export default function StatsPage() {
             ← 응답 목록
           </Link>
           <h1 className="mt-1 text-2xl font-bold text-gray-900">{form.title} · 통계</h1>
-          <p className="text-sm text-gray-500">총 {stats.totalResponses}개 응답</p>
         </div>
         <Button
           variant="secondary"
@@ -77,14 +90,31 @@ export default function StatsPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-6">
-          {stats.fields.map((f) => (
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {summaryCells.map((c) => (
+              <div key={c.label} className="rounded-xl border border-gray-200 bg-white px-4 py-4 text-center">
+                <div className="text-xs text-gray-500">{c.label}</div>
+                <div className="mt-1 text-xl font-bold tabular-nums text-brand-dark sm:text-2xl">{c.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {stats.fields.map((f, i) => {
+            const answerRate =
+              stats.totalResponses > 0 ? Math.round((f.answeredCount / stats.totalResponses) * 100) : 0;
+            return (
             <section key={f.fieldId} className="rounded-xl border border-gray-200 bg-white p-5">
               <div className="mb-3 flex items-center gap-2">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-light text-xs font-semibold text-brand-dark">
+                  {i + 1}
+                </span>
                 <h2 className="font-semibold text-gray-900">{f.label}</h2>
                 <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
                   {FIELD_TYPE_LABELS[f.type as FieldType] ?? f.type}
                 </span>
-                <span className="ml-auto shrink-0 text-xs text-gray-400">{f.answeredCount}명 응답</span>
+                <span className="ml-auto shrink-0 text-xs tabular-nums text-gray-400">
+                  {f.answeredCount.toLocaleString()}명 응답 · {answerRate}%
+                </span>
               </div>
               {f.type === 'SINGLE' && f.distribution && <SingleChoiceChart distribution={f.distribution} />}
               {f.type === 'MULTI' && f.distribution && <MultiChoiceChart distribution={f.distribution} />}
@@ -96,7 +126,8 @@ export default function StatsPage() {
                 ))}
               {!['SINGLE', 'MULTI', 'NUMBER'].includes(f.type) && <TextSamples samples={f.sampleAnswers ?? []} />}
             </section>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
