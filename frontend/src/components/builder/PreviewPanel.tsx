@@ -18,7 +18,7 @@ export function PreviewPanel({ title, description, fields, headerImageUrl, logoI
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
       {headerImageUrl && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={resolveAssetUrl(headerImageUrl)} alt="" className="max-h-40 w-full object-cover" />
+        <img src={resolveAssetUrl(headerImageUrl)} alt="" className="h-auto w-full" />
       )}
       <div className="p-6">
         {logoImageUrl && (

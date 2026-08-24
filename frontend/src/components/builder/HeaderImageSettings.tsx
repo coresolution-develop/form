@@ -73,7 +73,7 @@ function ImageSlot({ title, hint, variant, url, uploading, removing, onPick, onR
         <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
           {variant === 'BANNER' ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={resolveAssetUrl(url)} alt={`${title} 미리보기`} className="max-h-40 w-full object-cover" />
+            <img src={resolveAssetUrl(url)} alt={`${title} 미리보기`} className="h-auto w-full" />
           ) : (
             <div className="flex justify-center py-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}

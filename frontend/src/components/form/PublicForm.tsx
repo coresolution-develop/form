@@ -179,7 +179,7 @@ export function PublicForm({ form }: { form: PublicFormType }) {
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
           {form.headerImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={resolveAssetUrl(form.headerImageUrl)} alt="" className="max-h-48 w-full object-cover" />
+            <img src={resolveAssetUrl(form.headerImageUrl)} alt="" className="h-auto w-full" />
           ) : (
             <div className="h-1.5 bg-brand" />
           )}
