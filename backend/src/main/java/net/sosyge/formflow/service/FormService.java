@@ -6,10 +6,12 @@ import net.sosyge.formflow.common.SlugGenerator;
 import net.sosyge.formflow.config.LimitsProperties;
 import net.sosyge.formflow.domain.Form;
 import net.sosyge.formflow.domain.FormField;
+import net.sosyge.formflow.domain.FieldType;
 import net.sosyge.formflow.domain.FormStatus;
 import net.sosyge.formflow.dto.request.form.FormCreateRequest;
 import net.sosyge.formflow.dto.request.form.FormStatusRequest;
 import net.sosyge.formflow.dto.request.form.FormUpdateRequest;
+import net.sosyge.formflow.dto.request.form.QuotaUpdateRequest;
 import net.sosyge.formflow.dto.response.form.FormDetailResponse;
 import net.sosyge.formflow.dto.response.form.FormSummaryResponse;
 import net.sosyge.formflow.exception.BusinessException;
@@ -140,6 +142,50 @@ public class FormService {
     /** 업로드 파일을 저장하고 공개 접근용 절대 URL을 만든다. */
     private String storeAndBuildUrl(MultipartFile file) {
         return apiUrl + "/uploads/" + fileStorageService.storeImage(file);
+    }
+
+    /**
+     * 선착순 설정(총 수량 + 수량 필드). 둘 다 null 이면 해제.
+     *
+     * <p>발행 후에도 총 수량은 조정할 수 있게 둔다(운영 중 물량 추가가 흔하다).
+     * 다만 <b>이미 소진된 양보다 작게</b>는 못 줄이고, <b>수량 필드 교체</b>는 소진 전에만 허용한다.
+     * 이미 쌓인 quota_used 가 어떤 필드 기준으로 집계된 것인지 모호해지기 때문이다.
+     */
+    @Transactional
+    public FormDetailResponse updateQuota(Long userId, Long formId, QuotaUpdateRequest req) {
+        Form form = loadOwnedForm(userId, formId);
+        Integer total = req.quotaTotal();
+        Long fieldId = req.quotaFieldId();
+
+        if (total == null && fieldId == null) {
+            formMapper.updateQuotaConfig(formId, null, null);
+            return getDetail(userId, formId);
+        }
+        if (total == null || fieldId == null) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR,
+                    "총 수량과 수량 필드를 함께 지정해야 합니다.");
+        }
+        if (total < form.getQuotaUsed()) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR,
+                    "이미 " + form.getQuotaUsed() + "개가 접수돼 총 수량을 그보다 작게 정할 수 없습니다.");
+        }
+        if (form.getQuotaUsed() > 0 && !fieldId.equals(form.getQuotaFieldId())) {
+            throw new BusinessException(ErrorCode.ILLEGAL_STATE,
+                    "이미 접수가 시작돼 수량 필드를 바꿀 수 없습니다.");
+        }
+
+        FormField field = fieldMapper.findByIdAndFormId(fieldId, formId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.VALIDATION_ERROR, "폼에 없는 필드입니다."));
+        if (field.getType() != FieldType.NUMBER) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "수량 필드는 숫자 타입이어야 합니다.");
+        }
+        // 필수가 아니면 수량을 비운 채 제출될 수 있고, 그러면 몇 개를 차감할지 정할 수 없다.
+        if (!field.isRequired()) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "수량 필드는 필수 항목이어야 합니다.");
+        }
+
+        formMapper.updateQuotaConfig(formId, total, fieldId);
+        return getDetail(userId, formId);
     }
 
     /**

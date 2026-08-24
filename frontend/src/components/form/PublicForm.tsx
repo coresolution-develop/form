@@ -191,6 +191,12 @@ export function PublicForm({ form }: { form: PublicFormType }) {
               </div>
             )}
             <h1 className="text-xl font-semibold text-gray-900">{form.title}</h1>
+            {form.quotaRemaining !== null && (
+              <p className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-brand-light px-3 py-1.5 text-sm text-brand-dark">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden />
+                선착순 · 남은 수량 <b className="tabular-nums">{form.quotaRemaining.toLocaleString()}</b>개
+              </p>
+            )}
             {form.description && (
               <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-500">{form.description}</p>
             )}

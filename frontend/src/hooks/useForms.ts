@@ -11,6 +11,7 @@ import {
   updateClosesAt,
   updateForm,
   updateFormStatus,
+  updateQuota,
   uploadHeaderImage,
   uploadLogoImage,
   type FormCreateInput,
@@ -98,6 +99,15 @@ export function useDeleteHeaderImage(id: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => deleteHeaderImage(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.detail(id) }),
+  });
+}
+
+export function useUpdateQuota(id: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { quotaTotal: number | null; quotaFieldId: number | null }) =>
+      updateQuota(id, vars.quotaTotal, vars.quotaFieldId),
     onSuccess: () => qc.invalidateQueries({ queryKey: formKeys.detail(id) }),
   });
 }

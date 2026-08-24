@@ -9,5 +9,11 @@ export interface PublicForm {
   headerImageUrl: string | null;
   /** 로고 이미지(제목 위 중앙 소형). */
   logoImageUrl: string | null;
+  /** 선착순 총 수량. null=선착순 미사용. */
+  quotaTotal: number | null;
+  /** 남은 수량. quotaTotal 이 null 이면 함께 null. */
+  quotaRemaining: number | null;
+  /** 수량 필드 id — 응답자 화면에서 잔여 안내를 붙일 위치. */
+  quotaFieldId: number | null;
   fields: FormField[];
 }

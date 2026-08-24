@@ -26,6 +26,22 @@ public class Form {
     private String logoImageUrl;
     private FormStatus status;
     private Integer responseLimit;
+    /** 선착순 총 수량. NULL=선착순 미사용. */
+    private Integer quotaTotal;
+    /** 수량을 차감할 기준 NUMBER 필드 id. */
+    private Long quotaFieldId;
+    /** 지금까지 소진된 수량(수량 필드 값의 합계). */
+    private int quotaUsed;
+
+    /** 선착순을 쓰는 폼인지. 총 수량이 지정돼 있으면 사용으로 본다. */
+    public boolean isQuotaEnabled() {
+        return quotaTotal != null;
+    }
+
+    /** 남은 수량. 선착순 미사용이면 null. */
+    public Integer getQuotaRemaining() {
+        return quotaTotal == null ? null : Math.max(0, quotaTotal - quotaUsed);
+    }
     private LocalDateTime closedAt;
     private LocalDateTime closesAt;
     private LocalDateTime deletedAt;

@@ -49,7 +49,7 @@ public class PublicFormService {
 
     @Transactional(readOnly = true)
     public PublicFormResponse getPublicForm(String slug) {
-        Form form = loadAvailableForm(slug);
+        Form form = loadAvailableForm(slug, false);
         List<FormField> fields = fieldMapper.findByFormIdOrderByOrderNum(form.getId());
         return PublicFormResponse.of(form, fields);
     }
@@ -58,13 +58,18 @@ public class PublicFormService {
     public void submit(String slug, SubmitRequest req, String recaptchaToken, String ip, String userAgent) {
         recaptchaVerifier.verify(recaptchaToken, "submit", recaptchaProperties.getSubmitThreshold());
 
-        Form form = loadAvailableForm(slug);
+        // 폼 행을 잠근 채 읽는다. 아래 '수량 판단 → 응답 삽입 → 카운터 반영'이
+        // 다른 제출과 뒤섞이지 않아야 선착순이 정확해진다.
+        Form form = loadAvailableForm(slug, true);
         List<FormField> fields = fieldMapper.findByFormIdOrderByOrderNum(form.getId());
         Map<Long, String> answerMap = req.answers().stream()
                 .filter(a -> a.fieldId() != null)
                 .collect(Collectors.toMap(SubmitRequest.Answer::fieldId, a -> a.value() == null ? "" : a.value(),
                         (a, b) -> a));
         validateAnswers(fields, answerMap);
+
+        // 선착순: 이번 제출이 가져갈 수량을 확정하고 잔여분을 확인한다.
+        int qty = form.isQuotaEnabled() ? resolveQuotaQty(form, fields, answerMap) : 0;
 
         Response response = Response.builder()
                 .formId(form.getId())
@@ -95,11 +100,57 @@ public class PublicFormService {
         if (!items.isEmpty()) {
             responseItemMapper.insertBatch(items);
         }
+
+        // 폼 행을 잠근 상태이므로 단순 증가로 충분하다.
+        // 이후 예외가 나면 같은 트랜잭션이라 카운터도 함께 되돌아간다.
+        if (qty > 0) {
+            formMapper.increaseQuotaUsed(form.getId(), qty);
+        }
+    }
+
+    /**
+     * 이번 제출이 차감할 수량을 구한다.
+     *
+     * <p>수량 필드가 사라졌거나 답이 없으면 <b>막는 쪽</b>으로 판단한다.
+     * 설정이 깨졌을 때 수량 제한이 조용히 풀려 초과 발급되는 것이 더 위험하기 때문이다.
+     */
+    private int resolveQuotaQty(Form form, List<FormField> fields, Map<Long, String> answerMap) {
+        Long quotaFieldId = form.getQuotaFieldId();
+        FormField quotaField = quotaFieldId == null ? null : fields.stream()
+                .filter(f -> f.getId().equals(quotaFieldId))
+                .findFirst()
+                .orElse(null);
+        if (quotaField == null) {
+            throw new BusinessException(ErrorCode.ILLEGAL_STATE,
+                    "수량 설정에 문제가 있어 접수를 받을 수 없습니다. 폼 관리자에게 문의해주세요.");
+        }
+
+        String raw = isVisible(quotaField, answerMap) ? answerMap.get(quotaField.getId()) : null;
+        int qty;
+        try {
+            qty = Integer.parseInt(StringUtils.trimAllWhitespace(raw == null ? "" : raw));
+        } catch (NumberFormatException e) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR,
+                    quotaField.getLabel() + "을(를) 숫자로 입력해주세요.");
+        }
+        if (qty < 1) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR,
+                    quotaField.getLabel() + "은(는) 1 이상이어야 합니다.");
+        }
+
+        int remaining = form.getQuotaRemaining() == null ? 0 : form.getQuotaRemaining();
+        if (qty > remaining) {
+            throw new BusinessException(ErrorCode.QUOTA_EXCEEDED,
+                    remaining == 0
+                            ? "준비된 수량이 모두 소진되었습니다."
+                            : "남은 수량이 " + remaining + "개입니다. 수량을 줄여 다시 신청해주세요.");
+        }
+        return qty;
     }
 
     @Transactional
     public void report(String slug, ReportFormRequest req, String ip, Long reporterUserId) {
-        Form form = loadAvailableForm(slug);
+        Form form = loadAvailableForm(slug, false);
         formReportMapper.insert(FormReport.builder()
                 .formId(form.getId())
                 .reporterIp(ip)
@@ -137,11 +188,22 @@ public class PublicFormService {
     }
 
     /** PUBLISHED + 미삭제 + 한도 미초과만 통과. 그 외(비공개/마감/삭제/한도초과)는 동일하게 404 (§6.10). */
-    private Form loadAvailableForm(String slug) {
-        Form form = formMapper.findActiveBySlug(slug)
+    /**
+     * 공개 폼 조회. {@code forUpdate=true} 면 폼 행을 잠근 채 읽는다(제출 경로).
+     *
+     * <p>응답 수 제한 판단은 잠금 없이 하면 동시 제출이 모두 통과해 한도를 넘길 수 있다.
+     * 제출 경로에서만 잠그고, 단순 조회는 잠그지 않는다.
+     */
+    private Form loadAvailableForm(String slug, boolean forUpdate) {
+        Form form = (forUpdate ? formMapper.findActiveBySlugForUpdate(slug) : formMapper.findActiveBySlug(slug))
                 .orElseThrow(() -> new BusinessException(ErrorCode.FORM_NOT_AVAILABLE));
         long count = responseMapper.countByFormId(form.getId());
         if (form.getResponseLimit() != null && count >= form.getResponseLimit()) {
+            throw new BusinessException(ErrorCode.FORM_NOT_AVAILABLE);
+        }
+        // 선착순 소진 시에도 폼을 닫는다. 부분 부족(남은 1개 < 신청 2개)은 제출 단계에서 따로 안내.
+        Integer remaining = form.getQuotaRemaining();
+        if (remaining != null && remaining <= 0) {
             throw new BusinessException(ErrorCode.FORM_NOT_AVAILABLE);
         }
         return form;

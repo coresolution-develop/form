@@ -11,14 +11,27 @@
 
     <select id="findByIdActive" resultType="net.sosyge.formflow.domain.Form">
         SELECT id, user_id, slug, title, description, header_image_url, logo_image_url,
-               status, response_limit, closed_at, closes_at, deleted_at, created_at, updated_at
+               status, response_limit, quota_total, quota_field_id, quota_used,
+               closed_at, closes_at, deleted_at, created_at, updated_at
         FROM forms
         WHERE id = #{id} AND deleted_at IS NULL
     </select>
 
+    <!-- 제출 경로 전용. FOR UPDATE 로 폼 행을 잠가 동시 제출을 직렬화한다.
+         (응답 수 제한·선착순 수량 판단과 삽입 사이에 다른 제출이 끼어들지 못하게) -->
+    <select id="findActiveBySlugForUpdate" resultType="net.sosyge.formflow.domain.Form">
+        SELECT id, user_id, slug, title, description, header_image_url, logo_image_url,
+               status, response_limit, quota_total, quota_field_id, quota_used,
+               closed_at, closes_at, deleted_at, created_at, updated_at
+        FROM forms
+        WHERE slug = #{slug} AND status = 'PUBLISHED' AND deleted_at IS NULL
+        FOR UPDATE
+    </select>
+
     <select id="findActiveBySlug" resultType="net.sosyge.formflow.domain.Form">
         SELECT id, user_id, slug, title, description, header_image_url, logo_image_url,
-               status, response_limit, closed_at, closes_at, deleted_at, created_at, updated_at
+               status, response_limit, quota_total, quota_field_id, quota_used,
+               closed_at, closes_at, deleted_at, created_at, updated_at
         FROM forms
         WHERE slug = #{slug} AND status = 'PUBLISHED' AND deleted_at IS NULL
     </select>
@@ -84,6 +97,14 @@
 
     <update id="updateHeaderImage">
         UPDATE forms SET header_image_url = #{url} WHERE id = #{id}
+    </update>
+
+    <update id="updateQuotaConfig">
+        UPDATE forms SET quota_total = #{quotaTotal}, quota_field_id = #{quotaFieldId} WHERE id = #{id}
+    </update>
+
+    <update id="increaseQuotaUsed">
+        UPDATE forms SET quota_used = quota_used + #{qty} WHERE id = #{id}
     </update>
 
     <update id="updateLogoImage">

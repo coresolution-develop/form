@@ -22,6 +22,13 @@ public interface FormMapper {
     /** 공개 조회용: PUBLISHED + 미삭제 폼만 slug로 조회. */
     Optional<Form> findActiveBySlug(@Param("slug") String slug);
 
+    /**
+     * 제출 경로 전용 조회. 폼 행을 FOR UPDATE 로 잠근다.
+     * 응답 수 제한·선착순 수량을 '판단하고 반영하는' 구간을 폼 단위로 직렬화하기 위한 것으로,
+     * 반드시 쓰기 트랜잭션 안에서 호출해야 한다.
+     */
+    Optional<Form> findActiveBySlugForUpdate(@Param("slug") String slug);
+
     boolean existsBySlug(@Param("slug") String slug);
 
     /** 목록 + responseCount (LEFT JOIN GROUP BY로 N+1 방지). */
@@ -53,6 +60,14 @@ public interface FormMapper {
 
     /** 로고 이미지 URL 설정/해제(null=제거). */
     void updateLogoImage(@Param("id") Long id, @Param("url") String url);
+
+    /** 선착순 설정(총 수량·수량 필드). 둘 다 null=선착순 해제. */
+    void updateQuotaConfig(@Param("id") Long id,
+                           @Param("quotaTotal") Integer quotaTotal,
+                           @Param("quotaFieldId") Long quotaFieldId);
+
+    /** 소진 수량 누적. 폼 행 잠금(findActiveBySlugForUpdate) 안에서만 호출할 것. */
+    void increaseQuotaUsed(@Param("id") Long id, @Param("qty") int qty);
 
     /** 배치(#1): closes_at 도달한 PUBLISHED 폼 id 목록. */
     List<Long> findExpiredPublished(@Param("now") LocalDateTime now);

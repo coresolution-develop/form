@@ -9,6 +9,7 @@ import net.sosyge.formflow.dto.request.form.FormClosesAtRequest;
 import net.sosyge.formflow.dto.request.form.FormCreateRequest;
 import net.sosyge.formflow.dto.request.form.FormStatusRequest;
 import net.sosyge.formflow.dto.request.form.FormUpdateRequest;
+import net.sosyge.formflow.dto.request.form.QuotaUpdateRequest;
 import net.sosyge.formflow.dto.response.form.FormDetailResponse;
 import net.sosyge.formflow.dto.response.form.FormSummaryResponse;
 import net.sosyge.formflow.security.CustomUserDetails;
@@ -104,6 +105,13 @@ public class FormController {
     public ApiResponse<FormDetailResponse> removeLogoImage(@CurrentUser CustomUserDetails user,
                                                            @PathVariable Long id) {
         return ApiResponse.ok(formService.removeLogoImage(user.getId(), id));
+    }
+
+    @PatchMapping("/{id}/quota")
+    public ApiResponse<FormDetailResponse> updateQuota(@CurrentUser CustomUserDetails user,
+                                                       @PathVariable Long id,
+                                                       @Valid @RequestBody QuotaUpdateRequest req) {
+        return ApiResponse.ok(formService.updateQuota(user.getId(), id, req));
     }
 
     @DeleteMapping("/{id}")

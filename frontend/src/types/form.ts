@@ -23,6 +23,12 @@ export interface FormDetail {
   logoImageUrl: string | null;
   status: FormStatus;
   responseLimit: number | null;
+  /** 선착순 총 수량. null=선착순 미사용. */
+  quotaTotal: number | null;
+  /** 수량을 차감할 기준 NUMBER 필드 id. */
+  quotaFieldId: number | null;
+  /** 지금까지 소진된 수량. */
+  quotaUsed: number;
   responseCount: number;
   closedAt: string | null;
   closesAt: string | null;

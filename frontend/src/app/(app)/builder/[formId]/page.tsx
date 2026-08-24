@@ -8,6 +8,7 @@ import { FieldEditorPanel } from '@/components/builder/FieldEditorPanel';
 import { FieldList } from '@/components/builder/FieldList';
 import { FormDescriptionEditor } from '@/components/builder/FormDescriptionEditor';
 import { HeaderImageSettings } from '@/components/builder/HeaderImageSettings';
+import { QuotaSettings } from '@/components/builder/QuotaSettings';
 import { PreviewPanel } from '@/components/builder/PreviewPanel';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -71,6 +72,7 @@ export default function BuilderPage() {
           <div className="mb-6 flex flex-col gap-4">
             <FormDescriptionEditor form={form} />
             <HeaderImageSettings form={form} />
+            <QuotaSettings form={form} />
           </div>
         )}
         {previewMode ? (

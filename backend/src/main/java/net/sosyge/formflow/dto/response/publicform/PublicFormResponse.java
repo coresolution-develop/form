@@ -16,6 +16,9 @@ public record PublicFormResponse(
         String description,
         String headerImageUrl,
         String logoImageUrl,
+        Integer quotaTotal,
+        Integer quotaRemaining,
+        Long quotaFieldId,
         List<FieldResponse> fields
 ) {
     public static PublicFormResponse of(Form form, List<FormField> fields) {
@@ -25,6 +28,9 @@ public record PublicFormResponse(
                 form.getDescription(),
                 form.getHeaderImageUrl(),
                 form.getLogoImageUrl(),
+                form.getQuotaTotal(),
+                form.getQuotaRemaining(),
+                form.getQuotaFieldId(),
                 fields.stream().map(FieldResponse::from).toList()
         );
     }

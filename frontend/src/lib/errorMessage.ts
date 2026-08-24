@@ -15,6 +15,7 @@ const MAP: Record<string, string> = {
   DUPLICATE_RESPONSE: '이미 응답한 폼입니다.',
   ILLEGAL_STATE: '현재 상태에서는 처리할 수 없습니다.',
   PLAN_LIMIT_EXCEEDED: '플랜 한도를 초과했습니다.',
+  QUOTA_EXCEEDED: '남은 수량이 부족합니다.',
   RATE_LIMITED: '잠시 후 다시 시도해주세요.',
   INTERNAL_ERROR: '일시적인 오류가 발생했습니다.',
 };
