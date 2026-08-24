@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { HowItWorks } from '@/components/landing/HowItWorks';
+import { Logo } from '@/components/ui/Logo';
 
 const BTN_BASE =
   'inline-flex h-12 items-center justify-center rounded-lg px-6 text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2';
@@ -12,9 +13,8 @@ export default function Home() {
       {/* 상단바 */}
       <header className="sticky top-0 z-10 border-b border-gray-100 bg-white/80 backdrop-blur">
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2">
-            <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-brand" />
-            <span className="text-lg font-bold tracking-tight text-gray-900">FormFlow</span>
+          <Link href="/" aria-label="FormFlow 홈">
+            <Logo markSize={22} wordmarkClassName="text-base" />
           </Link>
           <nav className="flex items-center gap-1">
             <Link

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/hooks/useAuth';
 import { logout } from '@/lib/auth';
 
@@ -24,8 +25,8 @@ export function Header() {
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-6">
-      <Link href="/dashboard" className="text-lg font-bold text-gray-900">
-        FormFlow
+      <Link href="/dashboard" aria-label="FormFlow 대시보드">
+        <Logo markSize={19} wordmarkClassName="text-[15px]" />
       </Link>
       <div className="flex items-center gap-3">
         {isAdmin && (
