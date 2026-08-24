@@ -95,8 +95,8 @@ export function BuilderHeader({ form, previewMode, onTogglePreview }: Props) {
 
   return (
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white px-6 py-3">
-      <div className="flex items-center gap-3">
-        <Link href="/dashboard" className="text-sm text-gray-500 hover:text-gray-800">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <Link href="/dashboard" className="shrink-0 text-sm text-gray-500 hover:text-gray-800">
           ← 대시보드
         </Link>
         <input
@@ -104,9 +104,11 @@ export function BuilderHeader({ form, previewMode, onTogglePreview }: Props) {
           onChange={(e) => setTitle(e.target.value)}
           onBlur={saveTitle}
           aria-label="폼 제목"
-          className="rounded border border-transparent px-2 py-1 text-lg font-semibold text-gray-900 hover:border-gray-200 focus:border-brand focus:outline-none"
+          className="min-w-[12rem] flex-1 rounded border border-transparent px-2 py-1 text-lg font-semibold text-gray-900 hover:border-gray-200 focus:border-brand focus:outline-none"
         />
-        <StatusBadge status={form.status} />
+        <span className="shrink-0">
+          <StatusBadge status={form.status} />
+        </span>
       </div>
 
       <div className="flex items-center gap-2">

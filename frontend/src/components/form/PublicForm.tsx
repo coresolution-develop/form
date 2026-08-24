@@ -177,20 +177,15 @@ export function PublicForm({ form }: { form: PublicFormType }) {
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto w-full max-w-xl px-4 py-10">
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-          {form.headerImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={resolveAssetUrl(form.headerImageUrl)} alt="" className="h-auto w-full" />
-          ) : (
-            <div className="h-1.5 bg-brand" />
-          )}
-          <div className="p-7">
+          {!form.headerImageUrl && <div className="h-1.5 bg-brand" />}
+          <div className={form.headerImageUrl ? 'p-7' : 'p-7 pb-6'}>
             {form.logoImageUrl && (
               <div className="mb-5 flex justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={resolveAssetUrl(form.logoImageUrl)} alt="" className="max-h-14 w-auto" />
               </div>
             )}
-            <h1 className="text-xl font-semibold text-gray-900">{form.title}</h1>
+            <h1 className="break-words text-xl font-semibold text-gray-900">{form.title}</h1>
             {form.quotaRemaining !== null && (
               <p className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-brand-light px-3 py-1.5 text-sm text-brand-dark">
                 <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden />
@@ -198,16 +193,21 @@ export function PublicForm({ form }: { form: PublicFormType }) {
               </p>
             )}
             {form.description && (
-              <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-500">{form.description}</p>
+              <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-500">
+                {form.description}
+              </p>
             )}
             {hasRequired && (
               <p className="mt-2 text-xs text-gray-400">
                 <span className="text-red-500">*</span> 표시는 필수 항목입니다.
               </p>
             )}
-
-            <div className="my-6 border-t border-gray-100" />
-
+          </div>
+          {form.headerImageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={resolveAssetUrl(form.headerImageUrl)} alt="" className="h-auto w-full" />
+          )}
+          <div className={form.headerImageUrl ? 'p-7' : 'mx-7 border-t border-gray-100 pb-7 pt-6'}>
             <div className="flex flex-col gap-5">
               {form.fields
                 .filter((field) => isFieldVisible(field, answers))
