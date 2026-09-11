@@ -17,7 +17,7 @@
 | MySQL | formflow | `formflow_dev` | formflow |
 | Redis(db) | 0 | 1 | 0 |
 | 프론트 도메인 | localhost | `form-dev.sosyge.net` | `form.sosyge.net` |
-| API 도메인 | localhost | `api-form-dev.sosyge.net` | `form-api.sosyge.net` |
+| API 도메인 | localhost | `api-form-dev.sosyge.net` | `form.sosyge.net` (`/api/`·`/uploads/` 경로 프록시) |
 
 ## CI 흐름
 
@@ -55,10 +55,12 @@
 
 ## nginx 도메인 → 포트
 
+> ⚠️ `sosyge.net` DNS(iwinv)는 레코드 한도가 꽉 차 있다(2026-09 기준). `form-api.sosyge.net` 레코드가 사라져 prod API를 `form.sosyge.net`의 경로 프록시로 옮겼다. dev 도메인(`form-dev`·`api-form-dev`)도 현재 DNS 레코드가 없다.
+
 | 도메인 | proxy_pass |
 |---|---|
 | `form.sosyge.net` | `127.0.0.1:3001` |
-| `form-api.sosyge.net` | `127.0.0.1:9000` |
+| `form.sosyge.net/api/`·`/uploads/` | `127.0.0.1:9000` (catch-all `/` 프록시보다 **위**에 둔다) |
 | `form-dev.sosyge.net` | `127.0.0.1:3002` |
 | `api-form-dev.sosyge.net` | `127.0.0.1:9001` |
 

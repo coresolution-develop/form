@@ -42,7 +42,8 @@ jobs:
             echo "api_url=https://api-form-dev.sosyge.net" >> "$GITHUB_OUTPUT"
             echo "env_name=development"                    >> "$GITHUB_OUTPUT"
           else
-            echo "api_url=https://form-api.sosyge.net"     >> "$GITHUB_OUTPUT"
+            # prod API는 form.sosyge.net 의 /api/·/uploads/ 경로로 프록시 (DNS 레코드 한도로 form-api 서브도메인 미사용)
+            echo "api_url=https://form.sosyge.net"         >> "$GITHUB_OUTPUT"
             echo "env_name=production"                     >> "$GITHUB_OUTPUT"
           fi
       - name: Build
